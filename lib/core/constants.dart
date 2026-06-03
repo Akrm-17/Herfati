@@ -33,6 +33,11 @@ class AppRoutes {
   static const String craftsmanDashboard = '/craftsman/dashboard';
 }
 
+String buildChatId(String id1, String id2) {
+  final ids = [id1, id2]..sort();
+  return 'chat_${ids[0]}_${ids[1]}';
+}
+
 class Professions {
   static const List<String> all = [
     "كهربائي",

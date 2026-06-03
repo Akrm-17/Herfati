@@ -15,24 +15,33 @@ class CraftsmanChatScreen extends StatefulWidget {
 class _CraftsmanChatScreenState extends State<CraftsmanChatScreen> {
   final FirebaseService _service = FirebaseService();
   final TextEditingController _messageController = TextEditingController();
+  final ScrollController _scrollController = ScrollController();
   String? _orderId;
   String? _clientName;
   String? _currentUserId;
+  String? _clientId;
+  bool _isInitialized = false;
 
   @override
   void didChangeDependencies() {
     super.didChangeDependencies();
-    final args = ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
+    if (_isInitialized) return;
+
+    final args =
+        ModalRoute.of(context)!.settings.arguments as Map<String, dynamic>?;
     if (args != null) {
-      _orderId = args['orderId'];
-      _clientName = args['clientName'] ?? "العميل";
+      _orderId = args["orderId"] as String?;
+      _clientName = args["clientName"] as String? ?? "العميل";
+      _clientId = args["clientId"] as String?;
       _initUser();
     } else {
-      showSnackBar('بيانات غير مكتملة', isError: true);
-      if (mounted) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (!mounted) return;
+        showSnackBar("بيانات غير مكتملة", isError: true);
         Navigator.pop(context);
-      }
+      });
     }
+    _isInitialized = true;
   }
 
   Future<void> _initUser() async {
@@ -48,56 +57,92 @@ class _CraftsmanChatScreenState extends State<CraftsmanChatScreen> {
     }
   }
 
+  void _scrollToBottom() {
+    if (_scrollController.hasClients) {
+      _scrollController.animateTo(
+        0.0,
+        duration: const Duration(milliseconds: 200),
+        curve: Curves.easeOut,
+      );
+    }
+  }
+
   void _sendMessage() async {
     if (_messageController.text.trim().isEmpty) return;
+    if (_clientId == null || _currentUserId == null || _orderId == null) return;
     final msg = app_models.ChatMessage(
       id: const Uuid().v4(),
       orderId: _orderId!,
       senderId: _currentUserId!,
+      recipientId: _clientId!,
       message: _messageController.text.trim(),
       timestamp: Timestamp.now(),
       isRead: false,
     );
     await _service.sendChatMessage(msg);
     _messageController.clear();
+    WidgetsBinding.instance.addPostFrameCallback((_) => _scrollToBottom());
+  }
+
+  @override
+  void dispose() {
+    _messageController.dispose();
+    _scrollController.dispose();
+    super.dispose();
   }
 
   @override
   Widget build(BuildContext context) {
-    if (_currentUserId == null) {
+    if (_currentUserId == null || _orderId == null) {
       return Scaffold(
         appBar: AppBar(title: Text(_clientName ?? "الدردشة")),
         body: const Center(child: CircularProgressIndicator()),
       );
     }
     return Scaffold(
-      appBar: AppBar(title: Text(_clientName!), backgroundColor: AppColors.primaryDarkBlue),
+      appBar: AppBar(
+        title: Text(_clientName!),
+        backgroundColor: AppColors.primaryDarkBlue,
+      ),
       body: Column(
         children: [
           Expanded(
             child: StreamBuilder<List<app_models.ChatMessage>>(
-              stream: _service.streamChatMessages(_orderId!),
+              stream: _service.streamChatMessages(
+                _orderId!,
+                alternateId: buildChatId(_currentUserId!, _clientId!),
+              ),
               builder: (context, snapshot) {
                 if (snapshot.hasError) {
-                  return Center(child: Text('خطأ: ${snapshot.error}\nقد تحتاج إلى إنشاء فهرس في Firebase Console.'));
+                  return Center(
+                    child: Text(
+                      'خطأ: ${snapshot.error}\nقد تحتاج إلى إنشاء فهرس في Firebase Console.',
+                    ),
+                  );
                 }
                 final messages = snapshot.data ?? [];
                 if (messages.isEmpty) {
                   return const Center(child: Text("لا توجد رسائل بعد"));
                 }
                 return ListView.builder(
+                  controller: _scrollController,
                   reverse: true,
                   itemCount: messages.length,
                   itemBuilder: (_, i) {
                     final msg = messages[i];
                     final isMe = msg.senderId == _currentUserId;
                     return Align(
-                      alignment: isMe ? Alignment.centerRight : Alignment.centerLeft,
+                      alignment:
+                          isMe ? Alignment.centerRight : Alignment.centerLeft,
                       child: Container(
-                        margin: const EdgeInsets.symmetric(vertical: 4, horizontal: 8),
-                        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 10),
+                        margin: const EdgeInsets.symmetric(
+                            vertical: 4, horizontal: 8),
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 12, vertical: 10),
                         decoration: BoxDecoration(
-                          color: isMe ? AppColors.primaryGold.withValues(alpha: 0.2) : Colors.grey[300],
+                          color: isMe
+                              ? AppColors.primaryGold.withValues(alpha: 0.2)
+                              : Colors.grey[300],
                           borderRadius: BorderRadius.circular(16),
                         ),
                         child: Text(msg.message),
@@ -117,7 +162,10 @@ class _CraftsmanChatScreenState extends State<CraftsmanChatScreen> {
                     controller: _messageController,
                     decoration: InputDecoration(
                       hintText: "اكتب رسالة...",
-                      border: OutlineInputBorder(borderRadius: BorderRadius.circular(24), borderSide: BorderSide.none),
+                      border: OutlineInputBorder(
+                        borderRadius: BorderRadius.circular(24),
+                        borderSide: BorderSide.none,
+                      ),
                       filled: true,
                       fillColor: Colors.grey[100],
                     ),
@@ -126,7 +174,10 @@ class _CraftsmanChatScreenState extends State<CraftsmanChatScreen> {
                 const SizedBox(width: 8),
                 CircleAvatar(
                   backgroundColor: AppColors.primaryGold,
-                  child: IconButton(icon: const Icon(Icons.send, color: Colors.white), onPressed: _sendMessage),
+                  child: IconButton(
+                    icon: const Icon(Icons.send, color: Colors.white),
+                    onPressed: _sendMessage,
+                  ),
                 ),
               ],
             ),

@@ -281,7 +281,8 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                                     ),
                                     ElevatedButton(
                                       onPressed: () {
-                                        print('CRAFTSMAN ID = ${craftsman.id}');
+                                        debugPrint(
+                                            'CRAFTSMAN ID = ${craftsman.id}');
 
                                         Navigator.of(context).pushNamed(
                                           '${AppRoutes.clientCraftsmanDetails}/${craftsman.id}',

@@ -1,3 +1,41 @@
+# Flutter/Dart/Pub
+.dart_tool/
+/.packages
+/.flutter-plugins
+/.flutter-plugins-dependencies
+build/
+/.pub-cache
+/.idea/
+.vscode/
+pubspec.lock
+
+# Android
+**/android/**/local.properties
+**/android/**/gradle-wrapper.jar
+**/android/**/gradle-wrapper.properties
+**/android/**/gradle/**
+
+# iOS
+**/ios/Flutter/Flutter.framework
+**/ios/Flutter/Flutter.podspec
+**/ios/Pods/
+**/ios/Runner/GeneratedPluginRegistrant.*
+**/ios/Flutter/ephemeral/
+
+# macOS
+**/macos/Flutter/ephemeral/
+
+# Web
+**/web/**/firebase-messaging-sw.js
+
+# Windows
+**/windows/flutter/ephemeral/
+
+# misc
+*.log
+*.iml
+*.ipr
+!.gitignore
 # Miscellaneous
 *.class
 *.log

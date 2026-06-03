@@ -11,7 +11,8 @@ class CraftsmanOrdersScreen extends StatefulWidget {
   State<CraftsmanOrdersScreen> createState() => _CraftsmanOrdersScreenState();
 }
 
-class _CraftsmanOrdersScreenState extends State<CraftsmanOrdersScreen> with SingleTickerProviderStateMixin {
+class _CraftsmanOrdersScreenState extends State<CraftsmanOrdersScreen>
+    with SingleTickerProviderStateMixin {
   late TabController _tabController;
   final FirebaseService _service = FirebaseService();
   String? _craftsmanId;
@@ -103,35 +104,124 @@ class _CraftsmanOrdersScreenState extends State<CraftsmanOrdersScreen> with Sing
                         Row(
                           mainAxisAlignment: MainAxisAlignment.spaceBetween,
                           children: [
-                            Text(clientName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                            Expanded(
+                              child: Text(
+                                clientName,
+                                style: const TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: 16,
+                                ),
+                              ),
+                            ),
                             Container(
-                              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-                              decoration: BoxDecoration(color: getOrderStatusColor(order.status).withOpacity(0.1), borderRadius: BorderRadius.circular(8)),
-                              child: Text(getOrderStatusText(order.status), style: TextStyle(color: getOrderStatusColor(order.status), fontSize: 12)),
+                              padding: const EdgeInsets.symmetric(
+                                horizontal: 10,
+                                vertical: 6,
+                              ),
+                              decoration: BoxDecoration(
+                                color: getOrderStatusColor(order.status)
+                                    .withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(12),
+                              ),
+                              child: Text(
+                                getOrderStatusText(order.status),
+                                style: TextStyle(
+                                  color: getOrderStatusColor(order.status),
+                                  fontSize: 12,
+                                  fontWeight: FontWeight.bold,
+                                ),
+                              ),
                             ),
                           ],
                         ),
-                        const SizedBox(height: 8),
-                        Text("الخدمة: ${order.serviceDescription}"),
-                        Text("السعر: ${order.price.toStringAsFixed(2)} ر.س"),
-                        Text("التاريخ: ${formatTimestamp(order.scheduledDate)}"),
-                        const SizedBox(height: 16),
-                        Row(
-                          mainAxisAlignment: MainAxisAlignment.end,
+                        const SizedBox(height: 14),
+                        Text('الخدمة: ${order.serviceDescription}'),
+                        const SizedBox(height: 6),
+                        Text('السعر: ${order.price.toStringAsFixed(2)} ر.س'),
+                        const SizedBox(height: 6),
+                        Text(
+                            'التاريخ: ${formatTimestamp(order.scheduledDate)}'),
+                        const SizedBox(height: 14),
+                        Wrap(
+                          spacing: 8,
+                          runSpacing: 8,
                           children: [
-                            if (status == app_models.OrderStatus.pending) ...[
-                              ElevatedButton(onPressed: () => _service.updateOrderStatus(order.id, 'accepted'), style: ElevatedButton.styleFrom(backgroundColor: Colors.green), child: const Text("قبول")),
-                              const SizedBox(width: 8),
-                              ElevatedButton(onPressed: () => _service.updateOrderStatus(order.id, 'rejected'), style: ElevatedButton.styleFrom(backgroundColor: Colors.red), child: const Text("رفض")),
-                            ] else if (status == app_models.OrderStatus.accepted) ...[
-                              ElevatedButton(onPressed: () => _service.updateOrderStatus(order.id, 'completed'), style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryGold), child: const Text("إكمال")),
-                            ],
-                            const SizedBox(width: 8),
                             ElevatedButton(
-                              onPressed: () => Navigator.pushNamed(context, AppRoutes.craftsmanChat, arguments: {'orderId': order.id, 'clientId': order.clientId, 'clientName': clientName}),
-                              style: ElevatedButton.styleFrom(backgroundColor: AppColors.primaryDarkBlue),
+                              onPressed: () {
+                                Navigator.of(context).pushNamed(
+                                  AppRoutes.craftsmanChat,
+                                  arguments: {
+                                    "orderId": order.id,
+                                    "clientId": order.clientId,
+                                    "clientName": clientName,
+                                  },
+                                );
+                              },
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primaryGold,
+                                foregroundColor: Colors.white,
+                              ),
                               child: const Text("محادثة"),
                             ),
+                            if (order.status ==
+                                app_models.OrderStatus.pending) ...[
+                              ElevatedButton(
+                                onPressed: () => _updateOrderStatus(
+                                  order.id,
+                                  app_models.OrderStatus.accepted
+                                      .toString()
+                                      .split(".")
+                                      .last,
+                                  order.clientId,
+                                  "طلب مقبول",
+                                  "تم قبول طلبك من قبل الحرفي",
+                                  order.id,
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.success,
+                                  foregroundColor: Colors.white,
+                                ),
+                                child: const Text("قبول"),
+                              ),
+                              ElevatedButton(
+                                onPressed: () => _updateOrderStatus(
+                                  order.id,
+                                  app_models.OrderStatus.rejected
+                                      .toString()
+                                      .split(".")
+                                      .last,
+                                  order.clientId,
+                                  "طلب مرفوض",
+                                  "تم رفض طلبك من قبل الحرفي",
+                                  order.id,
+                                ),
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: Colors.red,
+                                  foregroundColor: Colors.white,
+                                ),
+                                child: const Text("رفض"),
+                              ),
+                            ],
+                            if (order.status ==
+                                app_models.OrderStatus.accepted) ...[
+                              ElevatedButton(
+                                onPressed: () {
+                                  Navigator.of(context).pushNamed(
+                                    AppRoutes.craftsmanChat,
+                                    arguments: {
+                                      "orderId": order.id,
+                                      "clientId": order.clientId,
+                                      "clientName": clientName,
+                                    },
+                                  );
+                                },
+                                style: ElevatedButton.styleFrom(
+                                  backgroundColor: AppColors.primaryGold,
+                                  foregroundColor: Colors.white,
+                                ),
+                                child: const Text("متابعة الطلب"),
+                              ),
+                            ],
                           ],
                         ),
                       ],
@@ -144,5 +234,44 @@ class _CraftsmanOrdersScreenState extends State<CraftsmanOrdersScreen> with Sing
         );
       },
     );
+  }
+
+  Color getOrderStatusColor(app_models.OrderStatus status) {
+    switch (status) {
+      case app_models.OrderStatus.pending:
+        return Colors.orange;
+      case app_models.OrderStatus.accepted:
+        return AppColors.success;
+      case app_models.OrderStatus.rejected:
+        return Colors.red;
+      case app_models.OrderStatus.completed:
+        return Colors.blue;
+      case app_models.OrderStatus.cancelled:
+        return Colors.grey;
+    }
+  }
+
+  Future<void> _updateOrderStatus(
+      String orderId,
+      String status,
+      String recipientId,
+      String title,
+      String body,
+      String orderIdForNotification) async {
+    try {
+      await _service.updateOrderStatus(orderId, status);
+      await _sendOrderNotification(
+          recipientId, title, body, orderIdForNotification);
+      setState(() {}); // Refresh the list
+      showSnackBar("تم تحديث حالة الطلب");
+    } catch (e) {
+      showSnackBar("فشل تحديث الحالة: ${e.toString()}", isError: true);
+    }
+  }
+
+  Future<void> _sendOrderNotification(
+      String recipientId, String title, String body, String orderId) async {
+    await _service.sendOrderNotification(recipientId, title, body,
+        orderId: orderId);
   }
 }

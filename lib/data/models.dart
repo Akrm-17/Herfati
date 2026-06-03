@@ -328,6 +328,7 @@ class ChatMessage {
   final String message;
   final Timestamp timestamp;
   final bool isRead;
+  final String? recipientId;
 
   ChatMessage({
     required this.id,
@@ -336,23 +337,26 @@ class ChatMessage {
     required this.message,
     required this.timestamp,
     this.isRead = false,
+    this.recipientId,
   });
 
   Map<String, dynamic> toJson() => {
-        'id': id,
-        'orderId': orderId,
-        'senderId': senderId,
-        'message': message,
-        'timestamp': timestamp,
-        'isRead': isRead,
+        "id": id,
+        "orderId": orderId,
+        "senderId": senderId,
+        "message": message,
+        "timestamp": timestamp,
+        "isRead": isRead,
+        "recipientId": recipientId,
       };
 
   static ChatMessage fromJson(Map<String, dynamic> json) => ChatMessage(
-        id: json['id'],
-        orderId: json['orderId'],
-        senderId: json['senderId'],
-        message: json['message'],
-        timestamp: json['timestamp'] as Timestamp,
-        isRead: json['isRead'] ?? false,
+        id: json["id"],
+        orderId: json["orderId"],
+        senderId: json["senderId"],
+        message: json["message"],
+        timestamp: json["timestamp"] as Timestamp,
+        isRead: json["isRead"] ?? false,
+        recipientId: json["recipientId"],
       );
 }

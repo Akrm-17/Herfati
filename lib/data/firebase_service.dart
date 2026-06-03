@@ -1,5 +1,7 @@
-import 'dart:io';
 import 'dart:async';
+import 'dart:convert';
+import 'dart:developer';
+import 'dart:io';
 import 'package:cross_file/cross_file.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart' as auth;
@@ -7,11 +9,15 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/foundation.dart';
 import 'package:herfatiapp/core/constants.dart';
 import 'package:herfatiapp/data/models.dart' as app_models;
+import 'package:firebase_messaging/firebase_messaging.dart';
+import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 
 class FirebaseService {
   final auth.FirebaseAuth _auth = auth.FirebaseAuth.instance;
   FirebaseFirestore get _firestore => FirebaseFirestore.instance;
+  final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+  final String _fcmServerKey = const String.fromEnvironment('FCM_SERVER_KEY');
 
   // ==================== AUTH ====================
   Future<app_models.User?> signInWithEmail(
@@ -21,7 +27,11 @@ class FirebaseService {
         email: email.trim(),
         password: password,
       );
-      return await _getUserById(result.user!.uid);
+      final user = await _getUserById(result.user!.uid);
+      if (user != null) {
+        _saveDeviceToken(user.id);
+      }
+      return user;
     } on auth.FirebaseAuthException catch (e) {
       String message = e.code == 'user-not-found' || e.code == 'wrong-password'
           ? 'البريد الإلكتروني أو كلمة المرور غير صحيحة.'
@@ -83,10 +93,11 @@ class FirebaseService {
           portfolioImages: [],
         );
         await _firestore
-            .collection('craftsmen')
+            .collection("craftsmen")
             .doc(craftsman.id)
             .set(craftsman.toJson());
       }
+      _saveDeviceToken(user.id);
       return user;
     } on auth.FirebaseAuthException catch (e) {
       String message = e.code == 'email-already-in-use'
@@ -99,22 +110,133 @@ class FirebaseService {
 
   Future<void> signOut() async {
     await _auth.signOut();
+    _removeDeviceToken();
     showSnackBar('تم تسجيل الخروج');
   }
 
   Future<app_models.User?> getCurrentUser() async {
     final user = _auth.currentUser;
     if (user == null) return null;
-    return await _getUserById(user.uid);
+    final appUser = await _getUserById(user.uid);
+    if (appUser != null) {
+      _saveDeviceToken(appUser.id);
+    }
+    return appUser;
   }
 
   Future<app_models.User?> _getUserById(String uid) async {
-    final doc = await _firestore.collection('users').doc(uid).get();
+    final doc = await _firestore.collection("users").doc(uid).get();
     if (!doc.exists) return null;
     return app_models.User.fromJson(doc.data()!);
   }
 
   Future<app_models.User?> getUserById(String uid) => _getUserById(uid);
+
+  Future<void> _saveDeviceToken(String userId) async {
+    String? token = await _firebaseMessaging.getToken();
+    if (token != null) {
+      await _firestore.collection("users").doc(userId).update({
+        'deviceToken': token,
+      });
+    }
+  }
+
+  Future<void> _removeDeviceToken() async {
+    String? token = await _firebaseMessaging.getToken();
+    if (token != null) {
+      final userId = _auth.currentUser?.uid;
+      if (userId != null) {
+        await _firestore.collection("users").doc(userId).update({
+          'deviceToken': FieldValue.delete(),
+        });
+      }
+    }
+  }
+
+  Future<String?> getDeviceToken(String userId) async {
+    final doc = await _firestore.collection("users").doc(userId).get();
+    if (doc.exists) {
+      return doc.data()?["deviceToken"];
+    }
+    return null;
+  }
+
+  Future<void> updateDeviceTokenForCurrentUser(String token) async {
+    final userId = _auth.currentUser?.uid;
+    if (userId != null) {
+      await _firestore.collection('users').doc(userId).update({
+        'deviceToken': token,
+      });
+    }
+  }
+
+  Future<bool> _sendFcmNotification(
+    String token,
+    String title,
+    String body, {
+    Map<String, dynamic>? data,
+  }) async {
+    if (_fcmServerKey.isEmpty) {
+      log('FCM server key not configured. Skipping remote notification.');
+      return false;
+    }
+
+    final payload = jsonEncode({
+      'to': token,
+      'notification': {
+        'title': title,
+        'body': body,
+        'sound': 'default',
+      },
+      'data': {
+        'click_action': 'FLUTTER_NOTIFICATION_CLICK',
+        ...?data,
+      },
+    });
+
+    final response = await http.post(
+      Uri.parse('https://fcm.googleapis.com/fcm/send'),
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': 'key=$_fcmServerKey',
+      },
+      body: payload,
+    );
+
+    if (response.statusCode == 200) {
+      log('FCM notification sent successfully.');
+      return true;
+    }
+
+    log('FCM notification failed: ${response.statusCode} ${response.body}');
+    return false;
+  }
+
+  Future<void> sendFcmNotificationToUser(
+    String recipientId,
+    String title,
+    String body, {
+    Map<String, dynamic>? data,
+  }) async {
+    final recipientToken = await getDeviceToken(recipientId);
+    if (recipientToken == null) {
+      log('No device token for recipient $recipientId.');
+      return;
+    }
+    await _sendFcmNotification(recipientToken, title, body, data: data);
+  }
+
+  Future<void> sendOrderNotification(
+    String recipientId,
+    String title,
+    String body, {
+    String? orderId,
+  }) async {
+    await sendFcmNotificationToUser(recipientId, title, body, data: {
+      if (orderId != null) 'orderId': orderId,
+      'type': 'order',
+    });
+  }
 
   // ==================== CRAFTSMAN ====================
   Future<app_models.Craftsman?> getCraftsmanProfile(String id) async {
@@ -215,23 +337,45 @@ class FirebaseService {
         .collection('orders')
         .doc(orderId)
         .update({'status': status});
-    showSnackBar('تم تحديث الحالة');
   }
 
   // ==================== CHAT (Stream) ====================
-  Stream<List<app_models.ChatMessage>> streamChatMessages(String orderId) {
-    return _firestore
-        .collection('chat_messages')
-        .where('orderId', isEqualTo: orderId)
-        .orderBy('timestamp', descending: true)
-        .snapshots()
-        .map((snapshot) => snapshot.docs
+  Stream<List<app_models.ChatMessage>> streamChatMessages(
+    String orderId, {
+    String? alternateId,
+  }) {
+    final ids = [orderId];
+    if (alternateId != null && alternateId != orderId) {
+      ids.add(alternateId);
+    }
+
+    final query = ids.length == 1
+        ? _firestore
+            .collection('chat_messages')
+            .where('orderId', isEqualTo: orderId)
+        : _firestore.collection('chat_messages').where('orderId', whereIn: ids);
+
+    return query.orderBy('timestamp', descending: true).snapshots().map(
+        (snapshot) => snapshot.docs
             .map((doc) => app_models.ChatMessage.fromJson(doc.data()))
             .toList());
   }
 
   Future<void> sendChatMessage(app_models.ChatMessage message) async {
     await _firestore.collection('chat_messages').add(message.toJson());
+    final recipientId = message.recipientId;
+    if (recipientId != null) {
+      await sendFcmNotificationToUser(
+        recipientId,
+        'رسالة جديدة',
+        message.message,
+        data: {
+          'orderId': message.orderId,
+          'senderId': message.senderId,
+          'type': 'chat',
+        },
+      );
+    }
   }
 
   // ==================== REVIEWS ====================

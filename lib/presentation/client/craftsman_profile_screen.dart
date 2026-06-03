@@ -285,7 +285,7 @@ class _ClientCraftsmanProfileScreenState
       return;
     }
 
-    final chatOrderId = 'chat_${_currentUserId}_${_craftsman!.id}';
+    final chatOrderId = buildChatId(_currentUserId!, _craftsman!.id);
 
     if (!mounted) return;
 
