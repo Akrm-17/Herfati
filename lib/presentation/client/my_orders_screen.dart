@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:herfatiapp/core/constants.dart';
 import 'package:herfatiapp/core/utils.dart';
+import 'package:herfatiapp/core/widgets.dart';
 import 'package:herfatiapp/data/firebase_service.dart';
 import 'package:herfatiapp/data/models.dart' as app_models;
 
@@ -121,14 +122,16 @@ class _MyOrdersScreenState extends State<MyOrdersScreen>
               const SizedBox(height: 16),
               Text(_errorMessage!),
               const SizedBox(height: 16),
-              ElevatedButton(
+              CustomButton(
+                text: 'إعادة المحاولة',
                 onPressed: () {
                   setState(() {
                     _errorMessage = null;
                   });
                   _fetchClientId();
                 },
-                child: const Text('إعادة المحاولة'),
+                width: 160,
+                height: 42,
               ),
             ],
           ),
@@ -236,7 +239,8 @@ class _MyOrdersScreenState extends State<MyOrdersScreen>
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          ElevatedButton(
+                          CustomButton(
+                            text: 'إلغاء الطلب',
                             onPressed: () => _updateOrderStatus(
                               order.id,
                               app_models.OrderStatus.cancelled
@@ -244,14 +248,13 @@ class _MyOrdersScreenState extends State<MyOrdersScreen>
                                   .split('.')
                                   .last,
                             ),
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: Colors.red,
-                              foregroundColor: Colors.white,
-                            ),
-                            child: const Text('إلغاء الطلب'),
+                            width: 120,
+                            height: 42,
+                            backgroundColor: Colors.red,
                           ),
                           const SizedBox(width: 8),
-                          ElevatedButton(
+                          CustomButton(
+                            text: 'متابعة',
                             onPressed: () {
                               Navigator.of(context).pushNamed(
                                 AppRoutes.clientChat,
@@ -262,11 +265,8 @@ class _MyOrdersScreenState extends State<MyOrdersScreen>
                                 },
                               );
                             },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primaryGold,
-                              foregroundColor: Colors.white,
-                            ),
-                            child: const Text('متابعة'),
+                            width: 120,
+                            height: 42,
                           ),
                         ],
                       ),
@@ -277,7 +277,8 @@ class _MyOrdersScreenState extends State<MyOrdersScreen>
                       Row(
                         mainAxisAlignment: MainAxisAlignment.end,
                         children: [
-                          ElevatedButton(
+                          CustomButton(
+                            text: 'متابعة الطلب',
                             onPressed: () {
                               Navigator.of(context).pushNamed(
                                 AppRoutes.clientChat,
@@ -288,11 +289,8 @@ class _MyOrdersScreenState extends State<MyOrdersScreen>
                                 },
                               );
                             },
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppColors.primaryGold,
-                              foregroundColor: Colors.white,
-                            ),
-                            child: const Text('متابعة الطلب'),
+                            width: 140,
+                            height: 42,
                           ),
                         ],
                       ),

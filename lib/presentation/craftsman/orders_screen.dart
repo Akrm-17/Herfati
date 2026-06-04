@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:herfatiapp/core/constants.dart';
 import 'package:herfatiapp/core/utils.dart';
+import 'package:herfatiapp/core/widgets.dart';
 import 'package:herfatiapp/data/firebase_service.dart';
 import 'package:herfatiapp/data/models.dart' as app_models;
 
@@ -146,7 +147,8 @@ class _CraftsmanOrdersScreenState extends State<CraftsmanOrdersScreen>
                           spacing: 8,
                           runSpacing: 8,
                           children: [
-                            ElevatedButton(
+                            CustomButton(
+                              text: "محادثة",
                               onPressed: () {
                                 Navigator.of(context).pushNamed(
                                   AppRoutes.craftsmanChat,
@@ -157,15 +159,13 @@ class _CraftsmanOrdersScreenState extends State<CraftsmanOrdersScreen>
                                   },
                                 );
                               },
-                              style: ElevatedButton.styleFrom(
-                                backgroundColor: AppColors.primaryGold,
-                                foregroundColor: Colors.white,
-                              ),
-                              child: const Text("محادثة"),
+                              width: 90,
+                              height: 40,
                             ),
                             if (order.status ==
                                 app_models.OrderStatus.pending) ...[
-                              ElevatedButton(
+                              CustomButton(
+                                text: "قبول",
                                 onPressed: () => _updateOrderStatus(
                                   order.id,
                                   app_models.OrderStatus.accepted
@@ -177,13 +177,12 @@ class _CraftsmanOrdersScreenState extends State<CraftsmanOrdersScreen>
                                   "تم قبول طلبك من قبل الحرفي",
                                   order.id,
                                 ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.success,
-                                  foregroundColor: Colors.white,
-                                ),
-                                child: const Text("قبول"),
+                                width: 90,
+                                height: 40,
+                                backgroundColor: AppColors.success,
                               ),
-                              ElevatedButton(
+                              CustomButton(
+                                text: "رفض",
                                 onPressed: () => _updateOrderStatus(
                                   order.id,
                                   app_models.OrderStatus.rejected
@@ -195,16 +194,15 @@ class _CraftsmanOrdersScreenState extends State<CraftsmanOrdersScreen>
                                   "تم رفض طلبك من قبل الحرفي",
                                   order.id,
                                 ),
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: Colors.red,
-                                  foregroundColor: Colors.white,
-                                ),
-                                child: const Text("رفض"),
+                                width: 90,
+                                height: 40,
+                                backgroundColor: Colors.red,
                               ),
                             ],
                             if (order.status ==
                                 app_models.OrderStatus.accepted) ...[
-                              ElevatedButton(
+                              CustomButton(
+                                text: "متابعة الطلب",
                                 onPressed: () {
                                   Navigator.of(context).pushNamed(
                                     AppRoutes.craftsmanChat,
@@ -215,11 +213,8 @@ class _CraftsmanOrdersScreenState extends State<CraftsmanOrdersScreen>
                                     },
                                   );
                                 },
-                                style: ElevatedButton.styleFrom(
-                                  backgroundColor: AppColors.primaryGold,
-                                  foregroundColor: Colors.white,
-                                ),
-                                child: const Text("متابعة الطلب"),
+                                width: 130,
+                                height: 40,
                               ),
                             ],
                           ],

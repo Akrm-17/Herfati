@@ -1,9 +1,10 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart';
 import 'package:herfatiapp/core/constants.dart';
+import 'package:herfatiapp/core/utils.dart';
+import 'package:herfatiapp/core/widgets.dart';
 import 'package:herfatiapp/data/firebase_service.dart';
 import 'package:herfatiapp/data/models.dart' as app_models;
 
@@ -257,16 +258,19 @@ class _CraftsmanProfileEditScreenState
                 ),
               ),
               const SizedBox(height: 24),
-              TextFormField(
+              CustomInputField(
                 controller: _nameController,
-                decoration: const InputDecoration(labelText: "الاسم"),
-                validator: (v) => v != null && v.isNotEmpty ? null : "مطلوب",
+                label: "الاسم",
+                validator: (v) =>
+                    validateRequired(v, message: "يرجى إدخال الاسم"),
               ),
               const SizedBox(height: 12),
-              TextFormField(
+              CustomInputField(
                 controller: _phoneController,
-                decoration: const InputDecoration(labelText: "الهاتف"),
-                validator: (v) => v != null && v.isNotEmpty ? null : "مطلوب",
+                label: "الهاتف",
+                keyboardType: TextInputType.phone,
+                validator: (v) =>
+                    validateRequired(v, message: "يرجى إدخال الهاتف"),
               ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
@@ -280,22 +284,23 @@ class _CraftsmanProfileEditScreenState
                 validator: (v) => v != null ? null : "اختر المهنة",
               ),
               const SizedBox(height: 12),
-              TextFormField(
+              CustomInputField(
                 controller: _yearsController,
-                decoration: const InputDecoration(labelText: "سنوات الخبرة"),
+                label: "سنوات الخبرة",
                 keyboardType: TextInputType.number,
                 validator: _validateYears,
               ),
               const SizedBox(height: 12),
-              TextFormField(
+              CustomInputField(
                 controller: _cityController,
-                decoration: const InputDecoration(labelText: "المدينة"),
-                validator: (v) => v != null && v.isNotEmpty ? null : "مطلوب",
+                label: "المدينة",
+                validator: (v) =>
+                    validateRequired(v, message: "يرجى إدخال المدينة"),
               ),
               const SizedBox(height: 12),
-              TextFormField(
+              CustomInputField(
                 controller: _bioController,
-                decoration: const InputDecoration(labelText: "نبذة"),
+                label: "نبذة",
                 maxLines: 3,
               ),
               const SizedBox(height: 24),
@@ -356,20 +361,17 @@ class _CraftsmanProfileEditScreenState
                       ),
                     ),
               const SizedBox(height: 8),
-              ElevatedButton(
-                onPressed: _isSaving ? null : _addPortfolioImage,
-                child: const Text("إضافة صورة للمعرض"),
+              CustomButton(
+                text: "إضافة صورة للمعرض",
+                onPressed: _addPortfolioImage,
+                isLoading: _isSaving,
               ),
               const SizedBox(height: 24),
-              _isSaving
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                      onPressed: _updateProfile,
-                      style: ElevatedButton.styleFrom(
-                        minimumSize: const Size(double.infinity, 50),
-                      ),
-                      child: const Text("حفظ الملف الشخصي"),
-                    ),
+              CustomButton(
+                text: "حفظ الملف الشخصي",
+                onPressed: _updateProfile,
+                isLoading: _isSaving,
+              ),
               const SizedBox(height: 12),
               TextButton(
                 onPressed: () async {

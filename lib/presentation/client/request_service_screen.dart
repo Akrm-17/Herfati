@@ -2,6 +2,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:herfatiapp/core/constants.dart';
 import 'package:herfatiapp/core/utils.dart';
+import 'package:herfatiapp/core/widgets.dart';
 import 'package:herfatiapp/data/firebase_service.dart';
 import 'package:herfatiapp/data/models.dart' as app_models;
 
@@ -83,30 +84,22 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
                 style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
               ),
               const SizedBox(height: 16),
-              TextFormField(
+              CustomInputField(
                 controller: _descriptionController,
+                label: 'وصف الخدمة',
+                hint: 'اشرح ما تحتاجه بالتفصيل...',
                 maxLines: 3,
-                decoration: const InputDecoration(
-                  labelText: 'وصف الخدمة',
-                  border: OutlineInputBorder(),
-                  hintText: 'اشرح ما تحتاجه بالتفصيل...',
-                ),
-                validator: (value) => (value == null || value.isEmpty)
-                    ? 'يرجى إدخال الوصف'
-                    : null,
+                validator: (value) =>
+                    validateRequired(value, message: 'يرجى إدخال الوصف'),
               ),
               const SizedBox(height: 16),
-              TextFormField(
+              CustomInputField(
                 controller: _priceController,
+                label: 'الميزانية المقترحة (ر.س)',
+                prefixIcon: Icons.money,
                 keyboardType: TextInputType.number,
-                decoration: const InputDecoration(
-                  labelText: 'الميزانية المقترحة (ر.س)',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.money),
-                ),
-                validator: (value) => (value == null || value.isEmpty)
-                    ? 'يرجى إدخال السعر'
-                    : null,
+                validator: (value) => validatePositiveNumber(value,
+                    message: 'يرجى إدخال سعر صالح'),
               ),
               const SizedBox(height: 16),
               ListTile(
@@ -126,17 +119,11 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
                 },
               ),
               const SizedBox(height: 32),
-              _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : ElevatedButton(
-                      onPressed: _submitRequest,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryGold,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size(double.infinity, 50),
-                      ),
-                      child: const Text('إرسال الطلب'),
-                    ),
+              CustomButton(
+                text: 'إرسال الطلب',
+                onPressed: _submitRequest,
+                isLoading: _isLoading,
+              ),
             ],
           ),
         ),

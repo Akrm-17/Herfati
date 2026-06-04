@@ -15,6 +15,24 @@ String? validateEmail(String? value) {
   return null;
 }
 
+String? validateRequired(String? value, {String message = 'يرجى إدخال هذا الحقل'}) {
+  if (value == null || value.isEmpty) {
+    return message;
+  }
+  return null;
+}
+
+String? validatePositiveNumber(String? value, {String message = 'يرجى إدخال رقم صالح'}) {
+  if (value == null || value.isEmpty) {
+    return 'يرجى إدخال هذا الحقل';
+  }
+  final number = double.tryParse(value);
+  if (number == null || number < 0) {
+    return message;
+  }
+  return null;
+}
+
 // دالة لتنسيق التاريخ
 String formatDate(DateTime date) {
   return '${date.year}-${date.month.toString().padLeft(2, '0')}-${date.day.toString().padLeft(2, '0')}';

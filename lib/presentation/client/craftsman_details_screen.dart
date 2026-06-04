@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:herfatiapp/core/constants.dart';
+import 'package:herfatiapp/core/widgets.dart';
 import 'package:herfatiapp/data/firebase_service.dart';
 import 'package:herfatiapp/data/models.dart' as app_models;
 
@@ -187,7 +188,8 @@ class _CraftsmanDetailsScreenState extends State<CraftsmanDetailsScreen> {
             Row(
               children: [
                 Expanded(
-                  child: ElevatedButton(
+                  child: CustomButton(
+                    text: "طلب خدمة",
                     onPressed: () {
                       Navigator.pushNamed(
                         context,
@@ -195,31 +197,14 @@ class _CraftsmanDetailsScreenState extends State<CraftsmanDetailsScreen> {
                         arguments: _craftsman!.id,
                       );
                     },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryGold,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child:
-                        const Text("طلب خدمة", style: TextStyle(fontSize: 16)),
                   ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
-                  child: ElevatedButton(
-                    onPressed: _startChat, // ✅ زر المحادثة المفعل
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryDarkBlue,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text("محادثة", style: TextStyle(fontSize: 16)),
+                  child: CustomButton(
+                    text: "محادثة",
+                    onPressed: _startChat,
+                    backgroundColor: AppColors.primaryDarkBlue,
                   ),
                 ),
               ],

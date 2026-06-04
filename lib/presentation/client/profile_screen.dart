@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:herfatiapp/core/constants.dart';
+import 'package:herfatiapp/core/utils.dart';
+import 'package:herfatiapp/core/widgets.dart';
 import 'package:herfatiapp/data/firebase_service.dart';
 import 'package:herfatiapp/data/models.dart' as app_models;
 
@@ -131,37 +133,31 @@ class _ClientProfileScreenState extends State<ClientProfileScreen> {
               ),
             ),
             const SizedBox(height: 32.0),
-            TextFormField(
+            CustomInputField(
               controller: _nameController,
-              decoration: const InputDecoration(labelText: 'الاسم'),
+              label: 'الاسم',
+              validator: (value) =>
+                  validateRequired(value, message: 'يرجى إدخال الاسم'),
             ),
             const SizedBox(height: 16.0),
-            TextFormField(
+            CustomInputField(
               controller: _phoneController,
-              decoration: const InputDecoration(labelText: 'رقم الهاتف'),
+              label: 'رقم الهاتف',
               keyboardType: TextInputType.phone,
+              validator: (value) =>
+                  validateRequired(value, message: 'يرجى إدخال رقم الهاتف'),
             ),
             const SizedBox(height: 32.0),
-            _isLoading
-                ? const CircularProgressIndicator()
-                : ElevatedButton(
-                    onPressed: _updateProfile,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryGold,
-                      foregroundColor: Colors.white,
-                      minimumSize: const Size(double.infinity, 50),
-                    ),
-                    child: const Text('حفظ الملف الشخصي'),
-                  ),
+            CustomButton(
+              text: 'حفظ الملف الشخصي',
+              onPressed: _updateProfile,
+              isLoading: _isLoading,
+            ),
             const SizedBox(height: 16.0),
-            ElevatedButton(
+            CustomButton(
+              text: 'تسجيل الخروج',
               onPressed: _logout,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: Colors.red,
-                foregroundColor: Colors.white,
-                minimumSize: const Size(double.infinity, 50),
-              ),
-              child: const Text('تسجيل الخروج'),
+              backgroundColor: Colors.red,
             ),
           ],
         ),

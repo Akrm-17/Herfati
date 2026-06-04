@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:herfatiapp/core/constants.dart';
 import 'package:herfatiapp/core/utils.dart';
+import 'package:herfatiapp/core/widgets.dart';
 import 'package:herfatiapp/data/firebase_service.dart';
 import 'package:herfatiapp/data/models.dart' as app_models;
 
@@ -45,7 +46,8 @@ class _LoginScreenState extends State<LoginScreen> {
           } else if (user.role == app_models.UserRole.craftsman) {
             Navigator.of(context).pushReplacementNamed(AppRoutes.craftsmanHome);
           } else if (user.role == app_models.UserRole.admin) {
-            Navigator.of(context).pushReplacementNamed(AppRoutes.adminDashboard);
+            Navigator.of(context)
+                .pushReplacementNamed(AppRoutes.adminDashboard);
           }
         }
       } catch (e) {
@@ -80,49 +82,29 @@ class _LoginScreenState extends State<LoginScreen> {
                 ),
               ),
               const SizedBox(height: 32.0),
-              TextFormField(
+              CustomInputField(
                 controller: _emailController,
-                decoration: const InputDecoration(
-                  labelText: 'البريد الإلكتروني',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.email),
-                ),
+                label: 'البريد الإلكتروني',
+                hint: 'example@mail.com',
+                prefixIcon: Icons.email,
+                keyboardType: TextInputType.emailAddress,
                 validator: validateEmail,
               ),
               const SizedBox(height: 16.0),
-              TextFormField(
+              CustomInputField(
                 controller: _passwordController,
-                decoration: const InputDecoration(
-                  labelText: 'كلمة المرور',
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.lock),
-                ),
+                label: 'كلمة المرور',
+                prefixIcon: Icons.lock,
                 obscureText: true,
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return 'يرجى إدخال كلمة المرور';
-                  }
-                  return null;
-                },
+                validator: (value) =>
+                    validateRequired(value, message: 'يرجى إدخال كلمة المرور'),
               ),
               const SizedBox(height: 32.0),
-              _isLoading
-                  ? const CircularProgressIndicator()
-                  : ElevatedButton(
-                      onPressed: _login,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryGold,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      child: const Text(
-                        'دخول',
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                    ),
+              CustomButton(
+                text: 'دخول',
+                onPressed: _login,
+                isLoading: _isLoading,
+              ),
               const SizedBox(height: 16.0),
               TextButton(
                 onPressed: () {

@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:herfatiapp/core/constants.dart';
+import 'package:herfatiapp/core/widgets.dart';
 import 'package:herfatiapp/data/firebase_service.dart';
 import 'package:herfatiapp/data/models.dart' as app_models;
 
@@ -279,25 +280,20 @@ class _ClientHomeScreenState extends State<ClientHomeScreen> {
                                         ],
                                       ),
                                     ),
-                                    ElevatedButton(
+                                    CustomButton(
+                                      text: 'عرض الملف',
                                       onPressed: () {
                                         debugPrint(
                                             'CRAFTSMAN ID = ${craftsman.id}');
-
                                         Navigator.of(context).pushNamed(
                                           '${AppRoutes.clientCraftsmanDetails}/${craftsman.id}',
                                           arguments: craftsman.id,
                                         );
                                       },
-                                      style: ElevatedButton.styleFrom(
-                                        backgroundColor: AppColors.primaryGold,
-                                        foregroundColor: Colors.white,
-                                        shape: RoundedRectangleBorder(
-                                          borderRadius:
-                                              BorderRadius.circular(8),
-                                        ),
-                                      ),
-                                      child: const Text('عرض الملف'),
+                                      width: 120,
+                                      height: 40,
+                                      textStyle: const TextStyle(fontSize: 14),
+                                      borderRadius: BorderRadius.circular(8),
                                     ),
                                   ],
                                 ),

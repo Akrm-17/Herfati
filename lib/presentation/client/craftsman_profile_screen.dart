@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_rating_bar/flutter_rating_bar.dart';
 import 'package:herfatiapp/core/constants.dart';
+import 'package:herfatiapp/core/widgets.dart';
 import 'package:herfatiapp/data/firebase_service.dart';
 import 'package:herfatiapp/data/models.dart' as app_models;
 import 'package:uuid/uuid.dart';
@@ -219,7 +220,8 @@ class _ClientCraftsmanProfileScreenState
                   maxLines: 3,
                 ),
                 const SizedBox(height: 16.0),
-                ElevatedButton(
+                CustomButton(
+                  text: 'إرسال التقييم',
                   onPressed: () async {
                     if (currentRating == 0.0) {
                       showSnackBar('الرجاء إضافة تقييم', isError: true);
@@ -258,12 +260,9 @@ class _ClientCraftsmanProfileScreenState
                           isError: true);
                     }
                   },
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryGold,
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size(double.infinity, 50),
-                  ),
-                  child: const Text('إرسال التقييم'),
+                  width: double.infinity,
+                  height: 50,
+                  backgroundColor: AppColors.primaryGold,
                 ),
                 const SizedBox(height: 16.0),
               ],
@@ -404,7 +403,8 @@ class _ClientCraftsmanProfileScreenState
             Row(
               children: [
                 Expanded(
-                  child: ElevatedButton(
+                  child: CustomButton(
+                    text: "طلب خدمة",
                     onPressed: () {
                       if (mounted) {
                         Navigator.of(context).pushNamed(
@@ -413,21 +413,15 @@ class _ClientCraftsmanProfileScreenState
                         );
                       }
                     },
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryGold,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child:
-                        const Text("طلب خدمة", style: TextStyle(fontSize: 16)),
+                    height: 44,
+                    textStyle: const TextStyle(fontSize: 16),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
                 const SizedBox(width: 16),
                 Expanded(
-                  child: ElevatedButton(
+                  child: CustomButton(
+                    text: "محادثة",
                     onPressed: _currentUserId != null &&
                             _currentUserId != _craftsman!.id
                         ? _startChat
@@ -435,15 +429,10 @@ class _ClientCraftsmanProfileScreenState
                             ? () => showSnackBar('يرجى تسجيل الدخول أولاً',
                                 isError: true)
                             : null,
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.primaryDarkBlue,
-                      foregroundColor: Colors.white,
-                      padding: const EdgeInsets.symmetric(vertical: 14),
-                      shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12),
-                      ),
-                    ),
-                    child: const Text("محادثة", style: TextStyle(fontSize: 16)),
+                    backgroundColor: AppColors.primaryDarkBlue,
+                    height: 44,
+                    textStyle: const TextStyle(fontSize: 16),
+                    borderRadius: BorderRadius.circular(12),
                   ),
                 ),
               ],
@@ -556,14 +545,11 @@ class _ClientCraftsmanProfileScreenState
             if (_currentUserRole == 'client' &&
                 _currentUserId != _craftsman!.id)
               Center(
-                child: ElevatedButton(
+                child: CustomButton(
+                  text: "قيم هذا الحرفي",
                   onPressed: _showReviewBottomSheet,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primaryGold,
-                    foregroundColor: Colors.white,
-                    minimumSize: const Size(200, 45),
-                  ),
-                  child: const Text("قيم هذا الحرفي"),
+                  width: 200,
+                  height: 45,
                 ),
               ),
             const SizedBox(height: 32.0),

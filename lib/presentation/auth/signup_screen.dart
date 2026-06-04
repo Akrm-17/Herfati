@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:herfatiapp/core/constants.dart';
 import 'package:herfatiapp/core/utils.dart';
+import 'package:herfatiapp/core/widgets.dart';
 import 'package:herfatiapp/data/firebase_service.dart';
 import 'package:herfatiapp/data/models.dart' as app_models;
 
@@ -16,9 +17,11 @@ class _SignupScreenState extends State<SignupScreen> {
   final TextEditingController _nameController = TextEditingController();
   final TextEditingController _emailController = TextEditingController();
   final TextEditingController _passwordController = TextEditingController();
-  final TextEditingController _confirmPasswordController = TextEditingController();
+  final TextEditingController _confirmPasswordController =
+      TextEditingController();
   final TextEditingController _phoneController = TextEditingController();
-  final TextEditingController _yearsOfExperienceController = TextEditingController();
+  final TextEditingController _yearsOfExperienceController =
+      TextEditingController();
   final TextEditingController _cityController = TextEditingController();
   final TextEditingController _bioController = TextEditingController();
   String? _selectedProfession;
@@ -115,38 +118,26 @@ class _SignupScreenState extends State<SignupScreen> {
                 ),
               ),
               const SizedBox(height: 32.0),
-              TextFormField(
+              CustomInputField(
                 controller: _nameController,
-                decoration: const InputDecoration(
-                  labelText: "الاسم الكامل",
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.person),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return "يرجى إدخال اسمك";
-                  }
-                  return null;
-                },
+                label: "الاسم الكامل",
+                prefixIcon: Icons.person,
+                validator: (value) =>
+                    validateRequired(value, message: "يرجى إدخال اسمك"),
               ),
               const SizedBox(height: 16.0),
-              TextFormField(
+              CustomInputField(
                 controller: _emailController,
-                decoration: const InputDecoration(
-                  labelText: "البريد الإلكتروني",
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.email),
-                ),
+                label: "البريد الإلكتروني",
+                prefixIcon: Icons.email,
+                keyboardType: TextInputType.emailAddress,
                 validator: validateEmail,
               ),
               const SizedBox(height: 16.0),
-              TextFormField(
+              CustomInputField(
                 controller: _passwordController,
-                decoration: const InputDecoration(
-                  labelText: "كلمة المرور",
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.lock),
-                ),
+                label: "كلمة المرور",
+                prefixIcon: Icons.lock,
                 obscureText: true,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -159,13 +150,10 @@ class _SignupScreenState extends State<SignupScreen> {
                 },
               ),
               const SizedBox(height: 16.0),
-              TextFormField(
+              CustomInputField(
                 controller: _confirmPasswordController,
-                decoration: const InputDecoration(
-                  labelText: "تأكيد كلمة المرور",
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.lock_outline),
-                ),
+                label: "تأكيد كلمة المرور",
+                prefixIcon: Icons.lock_outline,
                 obscureText: true,
                 validator: (value) {
                   if (value == null || value.isEmpty) {
@@ -178,20 +166,13 @@ class _SignupScreenState extends State<SignupScreen> {
                 },
               ),
               const SizedBox(height: 16.0),
-              TextFormField(
+              CustomInputField(
                 controller: _phoneController,
+                label: "رقم الهاتف",
+                prefixIcon: Icons.phone,
                 keyboardType: TextInputType.phone,
-                decoration: const InputDecoration(
-                  labelText: "رقم الهاتف",
-                  border: OutlineInputBorder(),
-                  prefixIcon: Icon(Icons.phone),
-                ),
-                validator: (value) {
-                  if (value == null || value.isEmpty) {
-                    return "يرجى إدخال رقم الهاتف";
-                  }
-                  return null;
-                },
+                validator: (value) =>
+                    validateRequired(value, message: "يرجى إدخال رقم الهاتف"),
               ),
               const SizedBox(height: 24.0),
               const Text(
@@ -244,7 +225,8 @@ class _SignupScreenState extends State<SignupScreen> {
                         }
                         return null;
                       },
-                      items: Professions.all.map<DropdownMenuItem<String>>((String value) {
+                      items: Professions.all
+                          .map<DropdownMenuItem<String>>((String value) {
                         return DropdownMenuItem<String>(
                           value: value,
                           child: Text(value),
@@ -265,7 +247,8 @@ class _SignupScreenState extends State<SignupScreen> {
                           if (value == null || value.isEmpty) {
                             return "يرجى إدخال سنوات الخبرة";
                           }
-                          if (int.tryParse(value) == null || int.parse(value) < 0) {
+                          if (int.tryParse(value) == null ||
+                              int.parse(value) < 0) {
                             return "الرجاء إدخال رقم صالح";
                           }
                         }
@@ -309,23 +292,11 @@ class _SignupScreenState extends State<SignupScreen> {
                   ],
                 ),
               const SizedBox(height: 32.0),
-              _isLoading
-                  ? const Center(child: CircularProgressIndicator())
-                  : ElevatedButton(
-                      onPressed: _signup,
-                      style: ElevatedButton.styleFrom(
-                        backgroundColor: AppColors.primaryGold,
-                        foregroundColor: Colors.white,
-                        minimumSize: const Size(double.infinity, 50),
-                        shape: RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(10),
-                        ),
-                      ),
-                      child: const Text(
-                        "إنشاء الحساب",
-                        style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                      ),
-                    ),
+              CustomButton(
+                text: "إنشاء الحساب",
+                onPressed: _signup,
+                isLoading: _isLoading,
+              ),
               const SizedBox(height: 16.0),
               TextButton(
                 onPressed: () {
