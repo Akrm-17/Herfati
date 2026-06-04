@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart';
@@ -27,6 +28,8 @@ class _CraftsmanProfileEditScreenState
   String? _selectedProfession;
   app_models.Craftsman? _craftsman;
   List<String> _portfolioImages = [];
+  File? _selectedProfileImageFile;
+  Uint8List? _selectedProfileImageBytes;
   bool _isLoading = true;
   bool _isSaving = false;
 
@@ -107,13 +110,22 @@ class _CraftsmanProfileEditScreenState
     final XFile? picked = await picker.pickImage(source: ImageSource.gallery);
     if (picked == null) return;
 
-    setState(() => _isSaving = true);
+    setState(() {
+      _isSaving = true;
+      if (kIsWeb) {
+        _selectedProfileImageBytes = null;
+      } else {
+        _selectedProfileImageFile = File(picked.path);
+      }
+    });
+
     try {
       dynamic file;
       if (kIsWeb) {
-        file = await picked.readAsBytes();
+        _selectedProfileImageBytes = await picked.readAsBytes();
+        file = _selectedProfileImageBytes;
       } else {
-        file = File(picked.path);
+        file = _selectedProfileImageFile!;
       }
       final url = await _service.uploadProfileImage(_craftsman!.id, file);
       if (url != null && mounted) {
@@ -121,12 +133,22 @@ class _CraftsmanProfileEditScreenState
         await _service.updateCraftsman(updated);
         setState(() {
           _craftsman = updated;
+          _selectedProfileImageFile = null;
+          _selectedProfileImageBytes = null;
         });
         showSnackBar('تم تحديث الصورة الشخصية');
       } else {
+        setState(() {
+          _selectedProfileImageFile = null;
+          _selectedProfileImageBytes = null;
+        });
         showSnackBar('فشل رفع الصورة', isError: true);
       }
     } catch (e) {
+      setState(() {
+        _selectedProfileImageFile = null;
+        _selectedProfileImageBytes = null;
+      });
       showSnackBar('خطأ: ${e.toString()}', isError: true);
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -179,6 +201,20 @@ class _CraftsmanProfileEditScreenState
     return null;
   }
 
+  ImageProvider? _profileImageProvider() {
+    if (_selectedProfileImageFile != null) {
+      return FileImage(_selectedProfileImageFile!);
+    }
+    if (_selectedProfileImageBytes != null) {
+      return MemoryImage(_selectedProfileImageBytes!);
+    }
+    if (_craftsman?.profileImage != null &&
+        _craftsman!.profileImage!.isNotEmpty) {
+      return NetworkImage(_craftsman!.profileImage!);
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
@@ -207,10 +243,8 @@ class _CraftsmanProfileEditScreenState
                   children: [
                     CircleAvatar(
                       radius: 60,
-                      backgroundImage: _craftsman!.profileImage != null
-                          ? NetworkImage(_craftsman!.profileImage!)
-                          : null,
-                      child: _craftsman!.profileImage == null
+                      backgroundImage: _profileImageProvider(),
+                      child: _profileImageProvider() == null
                           ? const Icon(Icons.person, size: 60)
                           : null,
                     ),
@@ -284,10 +318,30 @@ class _CraftsmanProfileEditScreenState
                       itemCount: _portfolioImages.length,
                       itemBuilder: (_, i) => Stack(
                         children: [
-                          Image.network(
-                            _portfolioImages[i],
-                            fit: BoxFit.cover,
-                            width: double.infinity,
+                          Positioned.fill(
+                            child: Image.network(
+                              _portfolioImages[i],
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              loadingBuilder: (context, child, progress) {
+                                if (progress == null) return child;
+                                return const Center(
+                                  child: CircularProgressIndicator(),
+                                );
+                              },
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  color: Colors.grey.shade200,
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.broken_image,
+                                      color: Colors.grey,
+                                      size: 40,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
                           ),
                           Positioned(
                             top: 0,
@@ -303,7 +357,7 @@ class _CraftsmanProfileEditScreenState
                     ),
               const SizedBox(height: 8),
               ElevatedButton(
-                onPressed: _addPortfolioImage,
+                onPressed: _isSaving ? null : _addPortfolioImage,
                 child: const Text("إضافة صورة للمعرض"),
               ),
               const SizedBox(height: 24),

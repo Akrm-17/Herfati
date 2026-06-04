@@ -58,18 +58,47 @@ class User {
         'isActive': isActive,
       };
 
-  static User fromJson(Map<String, dynamic> json) => User(
-        id: json['id'],
-        name: json['name'],
-        email: json['email'],
-        role: UserRole.values.firstWhere(
-          (e) => e.toString().split('.').last == json['role'],
-        ),
-        phone: json['phone'],
-        profileImage: json['profileImage'],
-        createdAt: json['createdAt'] as Timestamp,
-        isActive: json['isActive'],
-      );
+  static User fromJson(Map<String, dynamic> json, {String? id}) {
+    final rawRole = json['role']?.toString() ?? '';
+    final normalizedRole = rawRole.toLowerCase();
+    final role = UserRole.values.firstWhere(
+      (e) {
+        final value = e.toString().split('.').last.toLowerCase();
+        return value == normalizedRole ||
+            e.toString().toLowerCase() == normalizedRole;
+      },
+      orElse: () => UserRole.client,
+    );
+
+    final createdAtRaw = json['createdAt'];
+    Timestamp createdAt;
+    if (createdAtRaw is Timestamp) {
+      createdAt = createdAtRaw;
+    } else if (createdAtRaw is DateTime) {
+      createdAt = Timestamp.fromDate(createdAtRaw);
+    } else if (createdAtRaw is String) {
+      createdAt =
+          Timestamp.fromDate(DateTime.tryParse(createdAtRaw) ?? DateTime.now());
+    } else {
+      createdAt = Timestamp.now();
+    }
+
+    final isActiveRaw = json['isActive'];
+    final isActive = isActiveRaw is bool
+        ? isActiveRaw
+        : isActiveRaw?.toString().toLowerCase() == 'true';
+
+    return User(
+      id: id ?? json['id'] as String? ?? '',
+      name: json['name'] ?? '',
+      email: json['email'] ?? '',
+      role: role,
+      phone: json['phone'] ?? '',
+      profileImage: json['profileImage'],
+      createdAt: createdAt,
+      isActive: isActive,
+    );
+  }
 }
 
 class Craftsman extends User {
@@ -117,8 +146,9 @@ class Craftsman extends User {
         'portfolioImages': portfolioImages,
       };
 
-  static Craftsman fromJson(Map<String, dynamic> json) => Craftsman(
-        id: json["id"],
+  static Craftsman fromJson(Map<String, dynamic> json, {String? id}) =>
+      Craftsman(
+        id: id ?? json["id"] as String? ?? '',
         name: json["name"],
         email: json["email"],
         role: UserRole.values.firstWhere(
@@ -235,8 +265,8 @@ class Order {
         'scheduledDate': scheduledDate,
       };
 
-  static Order fromJson(Map<String, dynamic> json) => Order(
-        id: json['id'],
+  static Order fromJson(Map<String, dynamic> json, {String? id}) => Order(
+        id: id ?? json['id'] as String? ?? '',
         clientId: json['clientId'],
         craftsmanId: json['craftsmanId'],
         serviceDescription: json['serviceDescription'],
@@ -310,8 +340,8 @@ class Review {
         'createdAt': createdAt,
       };
 
-  static Review fromJson(Map<String, dynamic> json) => Review(
-        id: json['id'],
+  static Review fromJson(Map<String, dynamic> json, {String? id}) => Review(
+        id: id ?? json['id'] as String? ?? '',
         clientId: json['clientId'],
         clientName: json['clientName'],
         craftsmanId: json['craftsmanId'],

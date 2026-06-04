@@ -323,13 +323,15 @@ class FirebaseService {
         .orderBy('createdAt', descending: true)
         .snapshots()
         .map((snapshot) => snapshot.docs
-            .map((doc) => app_models.Order.fromJson(doc.data()))
+            .map((doc) => app_models.Order.fromJson(doc.data(), id: doc.id))
             .toList());
   }
 
   Future<app_models.Order> createOrder(app_models.Order order) async {
-    final docRef = await _firestore.collection('orders').add(order.toJson());
-    return order.copyWith(id: docRef.id);
+    final docRef = _firestore.collection('orders').doc();
+    final orderWithId = order.copyWith(id: docRef.id);
+    await docRef.set(orderWithId.toJson());
+    return orderWithId;
   }
 
   Future<void> updateOrderStatus(String orderId, String status) async {
@@ -337,6 +339,178 @@ class FirebaseService {
         .collection('orders')
         .doc(orderId)
         .update({'status': status});
+  }
+
+  // ==================== ADMIN HELPERS ====================
+  Future<int> getUsersCount() async {
+    final snapshot = await _firestore.collection('users').get();
+    return snapshot.docs.length;
+  }
+
+  Future<List<app_models.User>> getAllUsers() async {
+    final snapshot = await _firestore.collection('users').get();
+    return snapshot.docs
+        .map((doc) => app_models.User.fromJson(
+              doc.data(),
+              id: doc.id,
+            ))
+        .toList();
+  }
+
+  Future<int> getCraftsmenCount() async {
+    final snapshot = await _firestore.collection('craftsmen').get();
+    return snapshot.docs.length;
+  }
+
+  Future<int> getOrdersCount() async {
+    final snapshot = await _firestore.collection('orders').get();
+    return snapshot.docs.length;
+  }
+
+  Future<double> getCompletedOrdersRevenue() async {
+    final snapshot = await _firestore
+        .collection('orders')
+        .where('status', isEqualTo: 'completed')
+        .get();
+    double revenue = 0.0;
+    for (var doc in snapshot.docs) {
+      final price = doc.data()['price'];
+      revenue += price is num ? price.toDouble() : 0.0;
+    }
+    return revenue;
+  }
+
+  Stream<List<app_models.User>> streamUsersByRole(String role) {
+    final normalizedRole = role.toLowerCase();
+    final capitalizedRole = role.isNotEmpty
+        ? '${role[0].toUpperCase()}${role.substring(1).toLowerCase()}'
+        : role;
+    final roleVariants = [
+      normalizedRole,
+      capitalizedRole,
+      'UserRole.$role',
+    ].toSet().toList();
+
+    return _firestore
+        .collection('users')
+        .where('role', whereIn: roleVariants)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => app_models.User.fromJson(
+                  doc.data(),
+                  id: doc.id,
+                ))
+            .toList());
+  }
+
+  Stream<List<app_models.User>> streamAllUsers() {
+    return _firestore.collection('users').snapshots().map((snapshot) => snapshot
+        .docs
+        .map((doc) => app_models.User.fromJson(doc.data(), id: doc.id))
+        .toList());
+  }
+
+  Stream<List<app_models.Craftsman>> streamAllCraftsmen() {
+    return _firestore
+        .collection('craftsmen')
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => app_models.Craftsman.fromJson(
+                  doc.data(),
+                  id: doc.id,
+                ))
+            .toList());
+  }
+
+  Stream<List<app_models.Review>> streamAllReviews() {
+    return _firestore
+        .collection('reviews')
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => app_models.Review.fromJson(
+                  doc.data(),
+                  id: doc.id,
+                ))
+            .toList());
+  }
+
+  Stream<List<app_models.Order>> streamCompletedOrders() {
+    return _firestore
+        .collection('orders')
+        .where('status', isEqualTo: 'completed')
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => app_models.Order.fromJson(
+                  doc.data(),
+                  id: doc.id,
+                ))
+            .toList());
+  }
+
+  Future<void> updateUser(app_models.User user) async {
+    await _firestore.collection('users').doc(user.id).update(user.toJson());
+    if (user.role == app_models.UserRole.craftsman) {
+      await _firestore.collection('craftsmen').doc(user.id).set({
+        'name': user.name,
+        'email': user.email,
+        'phone': user.phone,
+      }, SetOptions(merge: true));
+    }
+    showSnackBar('تم تحديث بيانات المستخدم');
+  }
+
+  Future<void> deleteUser(String userId) async {
+    await _firestore.collection('users').doc(userId).delete();
+  }
+
+  Future<void> deleteOrder(String orderId) async {
+    await _firestore.collection('orders').doc(orderId).delete();
+  }
+
+  Stream<List<app_models.Order>> streamAllOrders() {
+    return _firestore
+        .collection('orders')
+        .orderBy('createdAt', descending: true)
+        .snapshots()
+        .map((snapshot) => snapshot.docs
+            .map((doc) => app_models.Order.fromJson(
+                  doc.data(),
+                  id: doc.id,
+                ))
+            .toList());
+  }
+
+  Future<List<app_models.Order>> getAllOrders() async {
+    final snapshot = await _firestore
+        .collection('orders')
+        .orderBy('createdAt', descending: true)
+        .get();
+    return snapshot.docs
+        .map((doc) => app_models.Order.fromJson(
+              doc.data(),
+              id: doc.id,
+            ))
+        .toList();
+  }
+
+  Future<List<app_models.Review>> getAllReviews() async {
+    final snapshot = await _firestore.collection('reviews').get();
+    return snapshot.docs
+        .map((doc) => app_models.Review.fromJson(
+              doc.data(),
+              id: doc.id,
+            ))
+        .toList();
+  }
+
+  Future<List<app_models.Craftsman>> getAllCraftsmen() async {
+    final snapshot = await _firestore.collection('craftsmen').get();
+    return snapshot.docs
+        .map((doc) => app_models.Craftsman.fromJson(
+              doc.data(),
+              id: doc.id,
+            ))
+        .toList();
   }
 
   // ==================== CHAT (Stream) ====================
@@ -401,8 +575,11 @@ class FirebaseService {
       final doc = await transaction.get(craftsmanRef);
       if (!doc.exists) return;
       final data = doc.data()!;
-      final double currentRating = (data['rating'] as num?)?.toDouble() ?? 0.0;
-      final int totalReviews = (data['totalReviews'] as int?) ?? 0;
+      final ratingValue = data['rating'];
+      final totalReviewsValue = data['totalReviews'];
+      final double currentRating =
+          ratingValue is num ? ratingValue.toDouble() : 0.0;
+      final int totalReviews = totalReviewsValue is int ? totalReviewsValue : 0;
       final newTotal = (currentRating * totalReviews) + review.rating;
       final newCount = totalReviews + 1;
       final newAvg = newTotal / newCount;
@@ -476,10 +653,5 @@ class FirebaseService {
       'portfolioImages': images,
     });
     showSnackBar('تم تحديث معرض الأعمال');
-  }
-
-  Future<void> updateUser(app_models.User user) async {
-    await _firestore.collection('users').doc(user.id).update(user.toJson());
-    showSnackBar('تم تحديث الملف');
   }
 }

@@ -21,6 +21,7 @@ void main() async {
     debugPrint('Notification initialization failed: $e');
     debugPrint(st.toString());
   }
+
   final firebaseService = FirebaseService();
   final user = await firebaseService.getCurrentUser();
   runApp(MyApp(initialUser: user));
