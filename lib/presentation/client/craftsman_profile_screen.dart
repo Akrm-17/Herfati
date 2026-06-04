@@ -173,7 +173,7 @@ class _ClientCraftsmanProfileScreenState
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
       ),
-      builder: (BuildContext context) {
+      builder: (BuildContext sheetContext) {
         return Padding(
           padding: EdgeInsets.only(
             bottom: MediaQuery.of(context).viewInsets.bottom,
@@ -235,8 +235,8 @@ class _ClientCraftsmanProfileScreenState
                       createdAt: Timestamp.now(),
                     );
                     if (!mounted) return;
-                    final navigator = Navigator.of(context);
-                    Navigator.pop(context);
+                    final outerNavigator = Navigator.of(context);
+                    Navigator.of(sheetContext).pop();
                     showDialog(
                       context: context,
                       barrierDismissible: false,
@@ -247,13 +247,13 @@ class _ClientCraftsmanProfileScreenState
                     try {
                       await _firebaseService.submitReview(review);
                       if (!mounted) return;
-                      navigator.pop();
+                      outerNavigator.pop();
                       showSnackBar('تم إرسال تقييمك بنجاح!');
                       await _fetchCraftsmanReviews(_craftsmanId!);
                       await _fetchCraftsmanProfile(_craftsmanId!);
                     } catch (e) {
                       if (!mounted) return;
-                      navigator.pop();
+                      outerNavigator.pop();
                       showSnackBar('فشل إرسال التقييم: ${e.toString()}',
                           isError: true);
                     }
@@ -285,7 +285,7 @@ class _ClientCraftsmanProfileScreenState
       return;
     }
 
-    final chatOrderId = 'chat_${_currentUserId}_${_craftsman!.id}';
+    final chatOrderId = buildChatId(_currentUserId!, _craftsman!.id);
 
     if (!mounted) return;
 

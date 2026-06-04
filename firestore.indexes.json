@@ -16,5 +16,23 @@
         { "fieldPath": "timestamp", "order": "DESCENDING" }
       ]
     }
+    ,
+    {
+      "collectionGroup": "craftsmen",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "isActive", "order": "ASCENDING" },
+        { "fieldPath": "rating", "order": "DESCENDING" }
+      ]
+    }
+    ,
+    {
+      "collectionGroup": "reviews",
+      "queryScope": "COLLECTION",
+      "fields": [
+        { "fieldPath": "craftsmanId", "order": "ASCENDING" },
+        { "fieldPath": "createdAt", "order": "DESCENDING" }
+      ]
+    }
   ]
 }

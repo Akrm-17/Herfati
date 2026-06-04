@@ -18,11 +18,20 @@ class _CraftsmanDetailsScreenState extends State<CraftsmanDetailsScreen> {
   List<app_models.Review> _reviews = [];
   bool _isLoading = true;
   String? _errorMessage;
+  String? _currentUserId;
 
   @override
   void initState() {
     super.initState();
     _fetchData();
+    _getCurrentUser();
+  }
+
+  Future<void> _getCurrentUser() async {
+    final user = await _firebaseService.getCurrentUser();
+    if (user != null) {
+      _currentUserId = user.id;
+    }
   }
 
   Future<void> _fetchData() async {
@@ -42,6 +51,46 @@ class _CraftsmanDetailsScreenState extends State<CraftsmanDetailsScreen> {
         _isLoading = false;
       });
     }
+  }
+
+  /// دالة لبدء المحادثة (مع التأكد من وجود userId)
+  void _startChat() async {
+    if (_craftsman == null) {
+      showSnackBar('لا يمكن بدء المحادثة حالياً', isError: true);
+      return;
+    }
+
+    // تأكد من جلب المستخدم الحالي إذا لم يكن موجوداً
+    String? userId = _currentUserId;
+    if (userId == null) {
+      final user = await _firebaseService.getCurrentUser();
+      if (user == null) {
+        showSnackBar('يرجى تسجيل الدخول أولاً', isError: true);
+        return;
+      }
+      userId = user.id;
+      _currentUserId = userId;
+    }
+
+    // منع الدردشة مع النفس
+    if (userId == _craftsman!.id) {
+      showSnackBar('لا يمكنك الدردشة مع نفسك', isError: true);
+      return;
+    }
+
+    // إنشاء معرف محادثة فريد
+    final chatOrderId = buildChatId(userId, _craftsman!.id);
+
+    // الانتقال إلى شاشة الدردشة
+    if (!mounted) return;
+    Navigator.of(context).pushNamed(
+      AppRoutes.clientChat,
+      arguments: {
+        'orderId': chatOrderId,
+        'craftsmanId': _craftsman!.id,
+        'craftsmanName': _craftsman!.name,
+      },
+    );
   }
 
   @override
@@ -161,9 +210,7 @@ class _CraftsmanDetailsScreenState extends State<CraftsmanDetailsScreen> {
                 const SizedBox(width: 16),
                 Expanded(
                   child: ElevatedButton(
-                    onPressed: () {
-                      showSnackBar('جاري التطوير...', isError: false);
-                    },
+                    onPressed: _startChat, // ✅ زر المحادثة المفعل
                     style: ElevatedButton.styleFrom(
                       backgroundColor: AppColors.primaryDarkBlue,
                       foregroundColor: Colors.white,

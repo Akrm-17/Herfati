@@ -6,7 +6,8 @@ import 'package:herfatiapp/data/firebase_service.dart';
 import 'package:herfatiapp/data/models.dart' as app_models;
 
 class RequestServiceScreen extends StatefulWidget {
-  const RequestServiceScreen({super.key});
+  final String craftsmanId;
+  const RequestServiceScreen({super.key, required this.craftsmanId});
 
   @override
   State<RequestServiceScreen> createState() => _RequestServiceScreenState();
@@ -18,18 +19,7 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
   final TextEditingController _descriptionController = TextEditingController();
   final TextEditingController _priceController = TextEditingController();
   DateTime _selectedDate = DateTime.now().add(const Duration(days: 1));
-  String? _craftsmanId;
   bool _isLoading = false;
-
-  @override
-  void didChangeDependencies() {
-    super.didChangeDependencies();
-    _craftsmanId = ModalRoute.of(context)!.settings.arguments as String?;
-    if (_craftsmanId == null) {
-      showSnackBar("بيانات الحرفي غير مكتملة", isError: true);
-      Navigator.pop(context);
-    }
-  }
 
   @override
   void dispose() {
@@ -40,8 +30,6 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
 
   Future<void> _submitRequest() async {
     if (_formKey.currentState!.validate()) {
-      if (_craftsmanId == null) return;
-
       setState(() => _isLoading = true);
 
       try {
@@ -54,7 +42,7 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
         final order = app_models.Order(
           id: '',
           clientId: currentUser.id,
-          craftsmanId: _craftsmanId!,
+          craftsmanId: widget.craftsmanId,
           serviceDescription: _descriptionController.text,
           status: app_models.OrderStatus.pending,
           price: double.tryParse(_priceController.text) ?? 0.0,
@@ -62,7 +50,6 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
           scheduledDate: Timestamp.fromDate(_selectedDate),
         );
 
-        // استخدام firebase_service بدلاً من الاتصال المباشر
         await _firebaseService.createOrder(order);
 
         if (mounted) {
@@ -104,8 +91,9 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
                   border: OutlineInputBorder(),
                   hintText: 'اشرح ما تحتاجه بالتفصيل...',
                 ),
-                validator: (value) =>
-                    (value == null || value.isEmpty) ? 'يرجى إدخال الوصف' : null,
+                validator: (value) => (value == null || value.isEmpty)
+                    ? 'يرجى إدخال الوصف'
+                    : null,
               ),
               const SizedBox(height: 16),
               TextFormField(
@@ -116,8 +104,9 @@ class _RequestServiceScreenState extends State<RequestServiceScreen> {
                   border: OutlineInputBorder(),
                   prefixIcon: Icon(Icons.money),
                 ),
-                validator: (value) =>
-                    (value == null || value.isEmpty) ? 'يرجى إدخال السعر' : null,
+                validator: (value) => (value == null || value.isEmpty)
+                    ? 'يرجى إدخال السعر'
+                    : null,
               ),
               const SizedBox(height: 16),
               ListTile(

@@ -1,6 +1,9 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:herfatiapp/core/constants.dart';
+import 'package:herfatiapp/data/firebase_service.dart';
+import 'package:herfatiapp/data/models.dart' as app_models;
 
 class AdminReportsScreen extends StatefulWidget {
   const AdminReportsScreen({super.key});
@@ -10,7 +13,12 @@ class AdminReportsScreen extends StatefulWidget {
 }
 
 class _AdminReportsScreenState extends State<AdminReportsScreen> {
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+  final FirebaseService _firebaseService = FirebaseService();
+  late final StreamSubscription<List<app_models.User>> _usersSubscription;
+  late final StreamSubscription<List<app_models.Order>> _ordersSubscription;
+  late final StreamSubscription<List<app_models.Review>> _reviewsSubscription;
+  late final StreamSubscription<List<app_models.Craftsman>>
+      _craftsmenSubscription;
   bool _isLoading = true;
   int _totalClients = 0;
   int _totalCraftsmen = 0;
@@ -20,10 +28,115 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
   Map<String, int> _craftsmenByProfession = {};
   List<Map<String, dynamic>> _topCraftsmen = [];
 
+  List<app_models.User> _allUsers = [];
+  List<app_models.Order> _allOrders = [];
+  List<app_models.Review> _allReviews = [];
+  List<app_models.Craftsman> _allCraftsmen = [];
+
   @override
   void initState() {
     super.initState();
-    _fetchReports();
+    _subscribeToReports();
+  }
+
+  void _subscribeToReports() {
+    _usersSubscription = _firebaseService.streamAllUsers().listen(
+      (users) {
+        if (!mounted) return;
+        _allUsers = users;
+        _updateReportData();
+      },
+      onError: (error) {
+        if (!mounted) return;
+        showSnackBar('فشل تحميل بيانات المستخدمين: $error', isError: true);
+      },
+    );
+
+    _ordersSubscription = _firebaseService.streamAllOrders().listen(
+      (orders) {
+        if (!mounted) return;
+        _allOrders = orders;
+        _updateReportData();
+      },
+      onError: (error) {
+        if (!mounted) return;
+        showSnackBar('فشل تحميل بيانات الطلبات: $error', isError: true);
+      },
+    );
+
+    _reviewsSubscription = _firebaseService.streamAllReviews().listen(
+      (reviews) {
+        if (!mounted) return;
+        _allReviews = reviews;
+        _updateReportData();
+      },
+      onError: (error) {
+        if (!mounted) return;
+        showSnackBar('فشل تحميل بيانات التقييمات: $error', isError: true);
+      },
+    );
+
+    _craftsmenSubscription = _firebaseService.streamAllCraftsmen().listen(
+      (craftsmen) {
+        if (!mounted) return;
+        _allCraftsmen = craftsmen;
+        _updateReportData();
+      },
+      onError: (error) {
+        if (!mounted) return;
+        showSnackBar('فشل تحميل بيانات الحرفيين: $error', isError: true);
+      },
+    );
+  }
+
+  void _updateReportData() {
+    final users = _allUsers;
+    final orders = _allOrders;
+    final reviews = _allReviews;
+    final craftsmen = _allCraftsmen;
+
+    _totalClients =
+        users.where((user) => user.role == app_models.UserRole.client).length;
+    _totalCraftsmen = users
+        .where((user) => user.role == app_models.UserRole.craftsman)
+        .length;
+    _totalOrders = orders.length;
+    _completedOrders = orders
+        .where((order) => order.status == app_models.OrderStatus.completed)
+        .length;
+
+    if (reviews.isNotEmpty) {
+      final totalRating = reviews
+          .map((review) => review.rating)
+          .fold<double>(0.0, (sum, rating) => sum + rating);
+      _averageRating = totalRating / reviews.length;
+    } else {
+      _averageRating = 0.0;
+    }
+
+    final professionCount = <String, int>{};
+    for (var craftsman in craftsmen) {
+      final profession =
+          craftsman.profession.isNotEmpty ? craftsman.profession : 'أخرى';
+      professionCount[profession] = (professionCount[profession] ?? 0) + 1;
+    }
+    _craftsmenByProfession = professionCount;
+
+    final sortedCraftsmen = List.of(craftsmen)
+      ..sort((a, b) => b.rating.compareTo(a.rating));
+    _topCraftsmen = sortedCraftsmen.take(5).map((craftsman) {
+      return {
+        'name': craftsman.name,
+        'rating': craftsman.rating,
+        'totalOrders': craftsman.totalOrders,
+        'profession':
+            craftsman.profession.isNotEmpty ? craftsman.profession : 'حرفي',
+      };
+    }).toList();
+
+    setState(() {
+      _isLoading = false;
+    });
   }
 
   Future<void> _fetchReports() async {
@@ -32,66 +145,27 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
     });
 
     try {
-      // جلب المستخدمين
-      final usersSnapshot = await _firestore.collection('users').get();
-      _totalClients = usersSnapshot.docs
-          .where((doc) => doc.data()['role'] == 'client')
-          .length;
-      _totalCraftsmen = usersSnapshot.docs
-          .where((doc) => doc.data()['role'] == 'craftsman')
-          .length;
-
-      // جلب الطلبات
-      final ordersSnapshot = await _firestore.collection('orders').get();
-      _totalOrders = ordersSnapshot.docs.length;
-      _completedOrders = ordersSnapshot.docs
-          .where((doc) => doc.data()['status'] == 'completed')
-          .length;
-
-      // جلب التقييمات
-      final reviewsSnapshot = await _firestore.collection('reviews').get();
-      if (reviewsSnapshot.docs.isNotEmpty) {
-        double totalRating = 0.0;
-        for (var doc in reviewsSnapshot.docs) {
-          totalRating += (doc.data()['rating'] as num).toDouble();
-        }
-        _averageRating = totalRating / reviewsSnapshot.docs.length;
-      }
-
-      // جلب الحرفيين حسب المهنة
-      final craftsmenSnapshot = await _firestore.collection('craftsmen').get();
-      Map<String, int> professionCount = {};
-      for (var doc in craftsmenSnapshot.docs) {
-        final profession = doc.data()['profession'] as String? ?? 'أخرى';
-        professionCount[profession] = (professionCount[profession] ?? 0) + 1;
-      }
-      _craftsmenByProfession = professionCount;
-
-      // جلب أفضل الحرفيين (أعلى تقييم)
-      final topCraftsmenSnapshot = await _firestore
-          .collection('craftsmen')
-          .orderBy('rating', descending: true)
-          .limit(5)
-          .get();
-      _topCraftsmen = topCraftsmenSnapshot.docs.map((doc) {
-        final data = doc.data();
-        return {
-          'name': data['name'] ?? 'غير معروف',
-          'rating': (data['rating'] as num?)?.toDouble() ?? 0.0,
-          'totalOrders': data['totalOrders'] ?? 0,
-          'profession': data['profession'] ?? 'حرفي',
-        };
-      }).toList();
-
-      setState(() {
-        _isLoading = false;
-      });
+      final users = await _firebaseService.getAllUsers();
+      _allUsers = users;
+      final orders = await _firebaseService.getAllOrders();
+      _allOrders = orders;
+      final reviews = await _firebaseService.getAllReviews();
+      _allReviews = reviews;
+      final craftsmen = await _firebaseService.getAllCraftsmen();
+      _allCraftsmen = craftsmen;
+      _updateReportData();
     } catch (e) {
-      setState(() {
-        _isLoading = false;
-      });
       showSnackBar('فشل تحميل التقارير: ${e.toString()}', isError: true);
     }
+  }
+
+  @override
+  void dispose() {
+    _usersSubscription.cancel();
+    _ordersSubscription.cancel();
+    _reviewsSubscription.cancel();
+    _craftsmenSubscription.cancel();
+    super.dispose();
   }
 
   @override
@@ -179,8 +253,12 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
                       const Center(child: Text('لا توجد بيانات'))
                     else
                       ..._craftsmenByProfession.entries.map((entry) {
-                        final totalValue = _craftsmenByProfession.values.fold(0, (int total, int value) => total + value);
-                        final percentage = totalValue > 0 ? (entry.value / totalValue * 100).toStringAsFixed(1) : '0';
+                        final totalValue = _craftsmenByProfession.values
+                            .fold(0, (int total, int value) => total + value);
+                        final percentage = totalValue > 0
+                            ? (entry.value / totalValue * 100)
+                                .toStringAsFixed(1)
+                            : '0';
                         return Column(
                           children: [
                             Row(
@@ -238,15 +316,18 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
                             margin: const EdgeInsets.only(bottom: 8),
                             child: ListTile(
                               leading: CircleAvatar(
-                                backgroundColor: AppColors.primaryGold.withValues(alpha: 0.2),
+                                backgroundColor: AppColors.primaryGold
+                                    .withValues(alpha: 0.2),
                                 child: Text('${index + 1}'),
                               ),
                               title: Text(craftsman['name']),
-                              subtitle: Text('${craftsman['profession']} · ${craftsman['totalOrders']} طلب'),
+                              subtitle: Text(
+                                  '${craftsman['profession']} · ${craftsman['totalOrders']} طلب'),
                               trailing: Row(
                                 mainAxisSize: MainAxisSize.min,
                                 children: [
-                                  const Icon(Icons.star, color: Colors.amber, size: 16),
+                                  const Icon(Icons.star,
+                                      color: Colors.amber, size: 16),
                                   const SizedBox(width: 4),
                                   Text(craftsman['rating'].toStringAsFixed(1)),
                                 ],
@@ -263,7 +344,8 @@ class _AdminReportsScreenState extends State<AdminReportsScreen> {
     );
   }
 
-  Widget _buildReportCard(String title, String value, IconData icon, Color color) {
+  Widget _buildReportCard(
+      String title, String value, IconData icon, Color color) {
     return Card(
       elevation: 2,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),

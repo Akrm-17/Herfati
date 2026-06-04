@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:flutter/foundation.dart';
@@ -10,10 +11,12 @@ class CraftsmanProfileEditScreen extends StatefulWidget {
   const CraftsmanProfileEditScreen({super.key});
 
   @override
-  State<CraftsmanProfileEditScreen> createState() => _CraftsmanProfileEditScreenState();
+  State<CraftsmanProfileEditScreen> createState() =>
+      _CraftsmanProfileEditScreenState();
 }
 
-class _CraftsmanProfileEditScreenState extends State<CraftsmanProfileEditScreen> {
+class _CraftsmanProfileEditScreenState
+    extends State<CraftsmanProfileEditScreen> {
   final FirebaseService _service = FirebaseService();
   final _formKey = GlobalKey<FormState>();
   final _nameController = TextEditingController();
@@ -25,13 +28,24 @@ class _CraftsmanProfileEditScreenState extends State<CraftsmanProfileEditScreen>
   String? _selectedProfession;
   app_models.Craftsman? _craftsman;
   List<String> _portfolioImages = [];
+  File? _selectedProfileImageFile;
+  Uint8List? _selectedProfileImageBytes;
   bool _isLoading = true;
   bool _isSaving = false;
 
   final List<String> _professions = const [
-    "كهربائي", "سباك", "نجار", "دهان", "حداد",
-    "فني تكييف", "فني ألمنيوم", "عامل بناء", "فني جبس وديكور",
-    "فني كاميرات مراقبة", "فني شبكات وإنترنت", "أخرى"
+    "كهربائي",
+    "سباك",
+    "نجار",
+    "دهان",
+    "حداد",
+    "فني تكييف",
+    "فني ألمنيوم",
+    "عامل بناء",
+    "فني جبس وديكور",
+    "فني كاميرات مراقبة",
+    "فني شبكات وإنترنت",
+    "أخرى"
   ];
 
   @override
@@ -96,13 +110,22 @@ class _CraftsmanProfileEditScreenState extends State<CraftsmanProfileEditScreen>
     final XFile? picked = await picker.pickImage(source: ImageSource.gallery);
     if (picked == null) return;
 
-    setState(() => _isSaving = true);
+    setState(() {
+      _isSaving = true;
+      if (kIsWeb) {
+        _selectedProfileImageBytes = null;
+      } else {
+        _selectedProfileImageFile = File(picked.path);
+      }
+    });
+
     try {
       dynamic file;
       if (kIsWeb) {
-        file = await picked.readAsBytes();
+        _selectedProfileImageBytes = await picked.readAsBytes();
+        file = _selectedProfileImageBytes;
       } else {
-        file = File(picked.path);
+        file = _selectedProfileImageFile!;
       }
       final url = await _service.uploadProfileImage(_craftsman!.id, file);
       if (url != null && mounted) {
@@ -110,12 +133,22 @@ class _CraftsmanProfileEditScreenState extends State<CraftsmanProfileEditScreen>
         await _service.updateCraftsman(updated);
         setState(() {
           _craftsman = updated;
+          _selectedProfileImageFile = null;
+          _selectedProfileImageBytes = null;
         });
         showSnackBar('تم تحديث الصورة الشخصية');
       } else {
+        setState(() {
+          _selectedProfileImageFile = null;
+          _selectedProfileImageBytes = null;
+        });
         showSnackBar('فشل رفع الصورة', isError: true);
       }
     } catch (e) {
+      setState(() {
+        _selectedProfileImageFile = null;
+        _selectedProfileImageBytes = null;
+      });
       showSnackBar('خطأ: ${e.toString()}', isError: true);
     } finally {
       if (mounted) setState(() => _isSaving = false);
@@ -140,7 +173,8 @@ class _CraftsmanProfileEditScreenState extends State<CraftsmanProfileEditScreen>
         setState(() {
           _portfolioImages.add(url);
         });
-        await _service.updateCraftsmanPortfolio(_craftsman!.id, _portfolioImages);
+        await _service.updateCraftsmanPortfolio(
+            _craftsman!.id, _portfolioImages);
         showSnackBar('تمت إضافة الصورة');
       } else {
         showSnackBar('فشل رفع الصورة', isError: true);
@@ -167,13 +201,33 @@ class _CraftsmanProfileEditScreenState extends State<CraftsmanProfileEditScreen>
     return null;
   }
 
+  ImageProvider? _profileImageProvider() {
+    if (_selectedProfileImageFile != null) {
+      return FileImage(_selectedProfileImageFile!);
+    }
+    if (_selectedProfileImageBytes != null) {
+      return MemoryImage(_selectedProfileImageBytes!);
+    }
+    if (_craftsman?.profileImage != null &&
+        _craftsman!.profileImage!.isNotEmpty) {
+      return NetworkImage(_craftsman!.profileImage!);
+    }
+    return null;
+  }
+
   @override
   Widget build(BuildContext context) {
     if (_isLoading) {
-      return Scaffold(appBar: AppBar(title: const Text("الملف الشخصي")), body: const Center(child: CircularProgressIndicator()));
+      return Scaffold(
+        appBar: AppBar(title: const Text("الملف الشخصي")),
+        body: const Center(child: CircularProgressIndicator()),
+      );
     }
     if (_craftsman == null) {
-      return Scaffold(appBar: AppBar(title: const Text("الملف الشخصي")), body: const Center(child: Text("لا توجد بيانات")));
+      return Scaffold(
+        appBar: AppBar(title: const Text("الملف الشخصي")),
+        body: const Center(child: Text("لا توجد بيانات")),
+      );
     }
 
     return Scaffold(
@@ -189,8 +243,10 @@ class _CraftsmanProfileEditScreenState extends State<CraftsmanProfileEditScreen>
                   children: [
                     CircleAvatar(
                       radius: 60,
-                      backgroundImage: _craftsman!.profileImage != null ? NetworkImage(_craftsman!.profileImage!) : null,
-                      child: _craftsman!.profileImage == null ? const Icon(Icons.person, size: 60) : null,
+                      backgroundImage: _profileImageProvider(),
+                      child: _profileImageProvider() == null
+                          ? const Icon(Icons.person, size: 60)
+                          : null,
                     ),
                     const SizedBox(height: 8),
                     ElevatedButton(
@@ -201,54 +257,128 @@ class _CraftsmanProfileEditScreenState extends State<CraftsmanProfileEditScreen>
                 ),
               ),
               const SizedBox(height: 24),
-              TextFormField(controller: _nameController, decoration: const InputDecoration(labelText: "الاسم"), validator: (v) => v != null && v.isNotEmpty ? null : "مطلوب"),
+              TextFormField(
+                controller: _nameController,
+                decoration: const InputDecoration(labelText: "الاسم"),
+                validator: (v) => v != null && v.isNotEmpty ? null : "مطلوب",
+              ),
               const SizedBox(height: 12),
-              TextFormField(controller: _phoneController, decoration: const InputDecoration(labelText: "الهاتف"), validator: (v) => v != null && v.isNotEmpty ? null : "مطلوب"),
+              TextFormField(
+                controller: _phoneController,
+                decoration: const InputDecoration(labelText: "الهاتف"),
+                validator: (v) => v != null && v.isNotEmpty ? null : "مطلوب",
+              ),
               const SizedBox(height: 12),
               DropdownButtonFormField<String>(
+                // ✅ إصلاح: استخدم initialValue بدلاً من value
                 initialValue: _selectedProfession,
-                items: _professions.map((e) => DropdownMenuItem(value: e, child: Text(e))).toList(),
+                items: _professions
+                    .map((e) => DropdownMenuItem(value: e, child: Text(e)))
+                    .toList(),
                 onChanged: (v) => setState(() => _selectedProfession = v),
                 decoration: const InputDecoration(labelText: "المهنة"),
                 validator: (v) => v != null ? null : "اختر المهنة",
               ),
               const SizedBox(height: 12),
-              TextFormField(controller: _yearsController, decoration: const InputDecoration(labelText: "سنوات الخبرة"), keyboardType: TextInputType.number, validator: _validateYears),
+              TextFormField(
+                controller: _yearsController,
+                decoration: const InputDecoration(labelText: "سنوات الخبرة"),
+                keyboardType: TextInputType.number,
+                validator: _validateYears,
+              ),
               const SizedBox(height: 12),
-              TextFormField(controller: _cityController, decoration: const InputDecoration(labelText: "المدينة"), validator: (v) => v != null && v.isNotEmpty ? null : "مطلوب"),
+              TextFormField(
+                controller: _cityController,
+                decoration: const InputDecoration(labelText: "المدينة"),
+                validator: (v) => v != null && v.isNotEmpty ? null : "مطلوب",
+              ),
               const SizedBox(height: 12),
-              TextFormField(controller: _bioController, decoration: const InputDecoration(labelText: "نبذة"), maxLines: 3),
+              TextFormField(
+                controller: _bioController,
+                decoration: const InputDecoration(labelText: "نبذة"),
+                maxLines: 3,
+              ),
               const SizedBox(height: 24),
-              const Text("معرض الأعمال", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              const Text(
+                "معرض الأعمال",
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+              ),
               const SizedBox(height: 8),
               _portfolioImages.isEmpty
                   ? const Text("لا توجد صور")
                   : GridView.builder(
                       shrinkWrap: true,
                       physics: const NeverScrollableScrollPhysics(),
-                      gridDelegate: const SliverGridDelegateWithFixedCrossAxisCount(crossAxisCount: 2, crossAxisSpacing: 8, mainAxisSpacing: 8),
+                      gridDelegate:
+                          const SliverGridDelegateWithFixedCrossAxisCount(
+                        crossAxisCount: 2,
+                        crossAxisSpacing: 8,
+                        mainAxisSpacing: 8,
+                      ),
                       itemCount: _portfolioImages.length,
                       itemBuilder: (_, i) => Stack(
                         children: [
-                          Image.network(_portfolioImages[i], fit: BoxFit.cover, width: double.infinity),
+                          Positioned.fill(
+                            child: Image.network(
+                              _portfolioImages[i],
+                              fit: BoxFit.cover,
+                              width: double.infinity,
+                              loadingBuilder: (context, child, progress) {
+                                if (progress == null) return child;
+                                return const Center(
+                                  child: CircularProgressIndicator(),
+                                );
+                              },
+                              errorBuilder: (context, error, stackTrace) {
+                                return Container(
+                                  color: Colors.grey.shade200,
+                                  child: const Center(
+                                    child: Icon(
+                                      Icons.broken_image,
+                                      color: Colors.grey,
+                                      size: 40,
+                                    ),
+                                  ),
+                                );
+                              },
+                            ),
+                          ),
                           Positioned(
-                            top: 0, right: 0,
-                            child: IconButton(icon: const Icon(Icons.remove_circle, color: Colors.red), onPressed: () => _removePortfolioImage(i)),
+                            top: 0,
+                            right: 0,
+                            child: IconButton(
+                              icon: const Icon(Icons.remove_circle,
+                                  color: Colors.red),
+                              onPressed: () => _removePortfolioImage(i),
+                            ),
                           ),
                         ],
                       ),
                     ),
               const SizedBox(height: 8),
-              ElevatedButton(onPressed: _isSaving ? null : _addPortfolioImage, child: const Text("إضافة صورة للمعرض")),
+              ElevatedButton(
+                onPressed: _isSaving ? null : _addPortfolioImage,
+                child: const Text("إضافة صورة للمعرض"),
+              ),
               const SizedBox(height: 24),
-              _isSaving ? const CircularProgressIndicator() : ElevatedButton(onPressed: _updateProfile, style: ElevatedButton.styleFrom(minimumSize: const Size(double.infinity, 50)), child: const Text("حفظ الملف الشخصي")),
+              _isSaving
+                  ? const CircularProgressIndicator()
+                  : ElevatedButton(
+                      onPressed: _updateProfile,
+                      style: ElevatedButton.styleFrom(
+                        minimumSize: const Size(double.infinity, 50),
+                      ),
+                      child: const Text("حفظ الملف الشخصي"),
+                    ),
               const SizedBox(height: 12),
               TextButton(
                 onPressed: () async {
-                  final navigator = Navigator.of(context);
                   await _service.signOut();
-                  if (!mounted) return;
-                  navigator.pushReplacementNamed(AppRoutes.login);
+                  // ✅ إصلاح: التحقق من mounted قبل التنقل
+                  if (mounted) {
+                    // ignore: use_build_context_synchronously
+                    Navigator.pushReplacementNamed(context, AppRoutes.login);
+                  }
                 },
                 child: const Text("تسجيل الخروج"),
               ),

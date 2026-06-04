@@ -1,5 +1,6 @@
+import 'dart:async';
+
 import 'package:flutter/material.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:herfatiapp/core/constants.dart';
 import 'package:herfatiapp/data/firebase_service.dart';
 import 'package:herfatiapp/data/models.dart' as app_models;
@@ -13,7 +14,13 @@ class AdminDashboardScreen extends StatefulWidget {
 
 class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   final FirebaseService _firebaseService = FirebaseService();
-  final FirebaseFirestore _firestore = FirebaseFirestore.instance;
+
+  late final StreamSubscription<List<app_models.User>> _usersSubscription;
+  late final StreamSubscription<List<app_models.Craftsman>>
+      _craftsmenSubscription;
+  late final StreamSubscription<List<app_models.Order>> _ordersSubscription;
+  late final StreamSubscription<List<app_models.Order>>
+      _completedOrdersSubscription;
 
   int _totalUsers = 0;
   int _totalCraftsmen = 0;
@@ -24,7 +31,81 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
   @override
   void initState() {
     super.initState();
-    _fetchStatistics();
+    _subscribeToStatistics();
+  }
+
+  void _subscribeToStatistics() {
+    _usersSubscription = _firebaseService.streamAllUsers().listen((users) {
+      if (!mounted) return;
+      setState(() {
+        _totalUsers = users.length;
+        _isLoading = false;
+      });
+    }, onError: (error) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+      showSnackBar('فشل تحميل عدد المستخدمين: $error', isError: true);
+    });
+
+    _craftsmenSubscription = _firebaseService.streamAllCraftsmen().listen(
+      (craftsmen) {
+        if (!mounted) return;
+        setState(() {
+          _totalCraftsmen = craftsmen.length;
+          _isLoading = false;
+        });
+      },
+      onError: (error) {
+        if (!mounted) return;
+        setState(() {
+          _isLoading = false;
+        });
+        showSnackBar('فشل تحميل عدد الحرفيين: $error', isError: true);
+      },
+    );
+
+    _ordersSubscription = _firebaseService.streamAllOrders().listen((orders) {
+      if (!mounted) return;
+      setState(() {
+        _totalOrders = orders.length;
+        _isLoading = false;
+      });
+    }, onError: (error) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+      showSnackBar('فشل تحميل عدد الطلبات: $error', isError: true);
+    });
+
+    _completedOrdersSubscription =
+        _firebaseService.streamCompletedOrders().listen((orders) {
+      if (!mounted) return;
+      setState(() {
+        _totalRevenue = orders.fold<double>(0.0, (sum, order) {
+          final price = order.price;
+          return sum + (price is num ? price.toDouble() : 0.0);
+        });
+        _isLoading = false;
+      });
+    }, onError: (error) {
+      if (!mounted) return;
+      setState(() {
+        _isLoading = false;
+      });
+      showSnackBar('فشل تحميل الإيرادات: $error', isError: true);
+    });
+  }
+
+  @override
+  void dispose() {
+    _usersSubscription.cancel();
+    _craftsmenSubscription.cancel();
+    _ordersSubscription.cancel();
+    _completedOrdersSubscription.cancel();
+    super.dispose();
   }
 
   Future<void> _fetchStatistics() async {
@@ -35,27 +116,10 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     }
 
     try {
-      // جلب عدد المستخدمين
-      final usersSnapshot = await _firestore.collection('users').get();
-      _totalUsers = usersSnapshot.docs.length;
-
-      // جلب عدد الحرفيين
-      final craftsmenSnapshot = await _firestore.collection('craftsmen').get();
-      _totalCraftsmen = craftsmenSnapshot.docs.length;
-
-      // جلب الطلبات والإيرادات
-      final ordersSnapshot = await _firestore.collection('orders').get();
-      _totalOrders = ordersSnapshot.docs.length;
-
-      double revenue = 0.0;
-      for (var doc in ordersSnapshot.docs) {
-        final order = app_models.Order.fromJson(doc.data());
-        if (order.status == app_models.OrderStatus.completed) {
-          revenue += order.price;
-        }
-      }
-      _totalRevenue = revenue;
-
+      _totalUsers = await _firebaseService.getUsersCount();
+      _totalCraftsmen = await _firebaseService.getCraftsmenCount();
+      _totalOrders = await _firebaseService.getOrdersCount();
+      _totalRevenue = await _firebaseService.getCompletedOrdersRevenue();
       if (mounted) {
         setState(() {
           _isLoading = false;
@@ -182,7 +246,8 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
     );
   }
 
-  Widget _buildStatCard(String title, String value, IconData icon, Color color) {
+  Widget _buildStatCard(
+      String title, String value, IconData icon, Color color) {
     return Card(
       elevation: 4,
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(15)),
