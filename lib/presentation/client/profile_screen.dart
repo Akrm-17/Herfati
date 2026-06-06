@@ -5,6 +5,10 @@ import 'package:herfatiapp/core/widgets.dart';
 import 'package:herfatiapp/data/firebase_service.dart';
 import 'package:herfatiapp/data/models.dart' as app_models;
 
+// Client Profile Screen
+// Arabic: شاشة الملف الشخصي للعميل لعرض وتحرير معلومات الحساب الأساسية.
+// English: Shows client's profile details and allows basic edits.
+
 class ClientProfileScreen extends StatefulWidget {
   const ClientProfileScreen({super.key});
 

@@ -26,6 +26,15 @@ import 'package:herfatiapp/presentation/craftsman/craftsman_profile_screen.dart'
 
 import 'package:herfatiapp/data/models.dart' as app_models;
 
+// Main application widget and route definitions.
+// This file wires up the global `MaterialApp` configuration and
+// centralizes route generation so navigation can be handled
+// from one place. Key classes:
+// - `MyApp`: app entry point that sets theme, locale and initial route.
+// - `RouteGenerator`: maps route names to screens and handles
+//    dynamic route parameters (e.g. craftsman details id).
+// - `NotFoundScreen`: simple 404 fallback shown for unknown routes.
+
 class MyApp extends StatelessWidget {
   final app_models.User? initialUser;
 
@@ -56,6 +65,12 @@ class MyApp extends StatelessWidget {
     );
   }
 }
+
+// `RouteGenerator` centralizes route handling. Using a generator
+// makes it easier to manage deep links and to validate route
+// parameters in one place instead of scattering logic across
+// the app. For dynamic routes (like craftsman details) this
+// extracts the id from the path and constructs the screen.
 
 class RouteGenerator {
   static Route<dynamic> generateRoute(RouteSettings settings) {
@@ -150,6 +165,10 @@ class RouteGenerator {
   }
 }
 
+// Simple 404 screen used when a route cannot be resolved.
+// It displays the missing route to aid debugging and provides
+// a button to return to the main/login screen.
+
 class NotFoundScreen extends StatelessWidget {
   final String? routeName;
 
@@ -167,7 +186,7 @@ class NotFoundScreen extends StatelessWidget {
           child: Column(
             mainAxisSize: MainAxisSize.min,
             children: [
-              Icon(
+              const Icon(
                 Icons.error_outline,
                 size: 100,
                 color: AppColors.error,

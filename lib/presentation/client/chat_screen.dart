@@ -3,6 +3,10 @@ import 'package:flutter/material.dart';
 import 'package:herfatiapp/core/constants.dart';
 import 'package:herfatiapp/data/firebase_service.dart';
 import 'package:herfatiapp/data/models.dart' as app_models;
+
+// Client Chat Screen
+// Arabic: واجهة دردشة العميل المرتبطة بطلب محدد أو محادثة مع الحرفي.
+// English: Real-time chat view for client with message stream and send input.
 import 'package:uuid/uuid.dart';
 
 class ClientChatScreen extends StatefulWidget {

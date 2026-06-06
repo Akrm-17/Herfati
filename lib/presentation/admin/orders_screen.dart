@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:herfatiapp/data/firebase_service.dart';
 import 'package:herfatiapp/data/models.dart' as app_models;
 
+// Admin Orders Screen
+// Arabic: شاشة إدارة جميع الطلبات في النظام للمشرف.
+// English: Lists all orders and allows admin actions like delete or status change.
+
 class AdminOrdersScreen extends StatelessWidget {
   const AdminOrdersScreen({super.key});
 

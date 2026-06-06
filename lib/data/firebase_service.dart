@@ -14,9 +14,16 @@ import 'package:http/http.dart' as http;
 import 'package:uuid/uuid.dart';
 
 class FirebaseService {
+  // خدمة Firebase الرئيسية التي تتعامل مع المصادقة، قاعدة البيانات، التخزين والإشعارات.
   final auth.FirebaseAuth _auth = auth.FirebaseAuth.instance;
+
+  // مرجع Firestore للوصول إلى مجموعات المستندات والقراءة/الكتابة عليها.
   FirebaseFirestore get _firestore => FirebaseFirestore.instance;
+
+  // مرجع Firebase Messaging لإدارة رموز الأجهزة وإرسال الإشعارات.
   final FirebaseMessaging _firebaseMessaging = FirebaseMessaging.instance;
+
+  // مفتاح خادم FCM المأخوذ من متغير بيئة لتأمين إرسال الإشعارات.
   final String _fcmServerKey = const String.fromEnvironment('FCM_SERVER_KEY');
 
   // ==================== AUTH ====================
@@ -28,6 +35,7 @@ class FirebaseService {
         password: password,
       );
       final user = await _getUserById(result.user!.uid);
+      // بعد تسجيل الدخول بنجاح، نحفظ رمز الجهاز للقدرة على إرسال إشعارات
       if (user != null) {
         _saveDeviceToken(user.id);
       }
@@ -73,6 +81,7 @@ class FirebaseService {
       );
       await _firestore.collection('users').doc(user.id).set(user.toJson());
 
+      // إذا كان المستخدم حرفيًا، ننشئ مستندًا خاصًا بالحرفيين لتخزين بياناتهم المتخصصة.
       if (role == 'craftsman') {
         final craftsman = app_models.Craftsman(
           id: user.id,
@@ -170,6 +179,7 @@ class FirebaseService {
     }
   }
 
+  // يرسل إشعارًا عبر خدمة FCM باستخدام مفتاح الخادم وطلب HTTP.
   Future<bool> _sendFcmNotification(
     String token,
     String title,
@@ -239,6 +249,7 @@ class FirebaseService {
   }
 
   // ==================== CRAFTSMAN ====================
+  // دوال استرجاع وتحديث ملف الحرفي في Firestore.
   Future<app_models.Craftsman?> getCraftsmanProfile(String id) async {
     final doc = await _firestore.collection('craftsmen').doc(id).get();
     if (!doc.exists) return null;
@@ -259,6 +270,7 @@ class FirebaseService {
     showSnackBar('تم تحديث الملف الشخصي');
   }
 
+  // يعيد الحرفيين الأعلى تقييماً لعرضهم في قسم التوصيات.
   Future<List<app_models.Craftsman>> getRecommendedCraftsmen(
       {int limit = 10}) async {
     final snapshot = await _firestore
@@ -272,6 +284,7 @@ class FirebaseService {
         .toList();
   }
 
+  // يعيد الحرفيين حسب التخصص المحدد مع التحقق من أنهم نشطون.
   Future<List<app_models.Craftsman>> getCraftsmenByCategory(
       String category) async {
     final snapshot = await _firestore
@@ -284,6 +297,7 @@ class FirebaseService {
         .toList();
   }
 
+  // يسترجع جميع الطلبات المرتبطة بالعميل مرتبة حسب الأحدث.
   // ==================== CLIENT ORDERS ====================
   Future<List<app_models.Order>> getClientOrders(String clientId) async {
     final snapshot = await _firestore
@@ -315,6 +329,7 @@ class FirebaseService {
     return stats;
   }
 
+  // دفق الطلبات الخاص بالحرفي حتى يتم تحديث واجهة المستخدم في الوقت الحقيقي.
   // ==================== ORDERS (Stream) ====================
   Stream<List<app_models.Order>> streamCraftsmanOrders(String craftsmanId) {
     return _firestore
@@ -385,11 +400,11 @@ class FirebaseService {
     final capitalizedRole = role.isNotEmpty
         ? '${role[0].toUpperCase()}${role.substring(1).toLowerCase()}'
         : role;
-    final roleVariants = [
+    final roleVariants = {
       normalizedRole,
       capitalizedRole,
       'UserRole.$role',
-    ].toSet().toList();
+    }.toList();
 
     return _firestore
         .collection('users')
@@ -514,6 +529,7 @@ class FirebaseService {
   }
 
   // ==================== CHAT (Stream) ====================
+  // يوفّر دفق رسائل الدردشة المرتبطة بطلب معين ويستمع لتحديثاتها في الوقت الحقيقي.
   Stream<List<app_models.ChatMessage>> streamChatMessages(
     String orderId, {
     String? alternateId,
@@ -535,6 +551,7 @@ class FirebaseService {
             .toList());
   }
 
+  // يرسل رسالة الدردشة إلى Firestore ويقوم بإشعار المستلم إذا كان معرفه موجوداً.
   Future<void> sendChatMessage(app_models.ChatMessage message) async {
     await _firestore.collection('chat_messages').add(message.toJson());
     final recipientId = message.recipientId;
@@ -565,6 +582,7 @@ class FirebaseService {
         .toList();
   }
 
+  // يضيف تقييمًا جديدًا للحرفي ويحدث متوسط التقييم وعدد المراجعات باستخدام معاملة آمنة.
   Future<void> submitReview(app_models.Review review) async {
     final docRef = await _firestore.collection('reviews').add(review.toJson());
     await docRef.update({'id': docRef.id});
@@ -592,6 +610,7 @@ class FirebaseService {
   }
 
   // ==================== IMAGE UPLOAD ====================
+  // يرفع صورة إلى Firebase Storage سواء على الويب أو الهاتف، مع دعم أنواع الملفات المختلفة.
   Future<String?> _uploadImageToStorage(String path, dynamic file) async {
     final ref = FirebaseStorage.instance.ref().child(path);
     try {

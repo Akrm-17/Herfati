@@ -1,18 +1,29 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+/// 👤 أنواع المستخدمين في تطبيق حرفتي
+/// تستخدم لتحديد صلاحيات كل مستخدم داخل التطبيق
 enum UserRole { client, craftsman, admin }
 
+/// 📦 حالات الطلب داخل التطبيق
+/// مهمة جدًا لأنها تتحكم في دورة حياة الطلب من البداية للنهاية
 enum OrderStatus { pending, accepted, rejected, completed, cancelled }
 
+/// ===============================
+/// 👤 User (المستخدم الأساسي)
+/// ===============================
+/// هذا هو القالب الأساسي لكل مستخدم في التطبيق:
+/// - عميل
+/// - حرفي
+/// - مدير
 class User {
-  final String id;
-  final String name;
-  final String email;
-  final UserRole role;
-  final String phone;
-  final String? profileImage;
-  final Timestamp createdAt;
-  final bool isActive;
+  final String id; // معرف المستخدم في Firebase
+  final String name; // اسم المستخدم
+  final String email; // البريد الإلكتروني
+  final UserRole role; // نوع المستخدم (عميل / حرفي / مدير)
+  final String phone; // رقم الهاتف
+  final String? profileImage; // صورة اختيارية (قد تكون null)
+  final Timestamp createdAt; // تاريخ إنشاء الحساب
+  final bool isActive; // هل الحساب مفعل؟
 
   User({
     required this.id,
@@ -25,6 +36,8 @@ class User {
     required this.isActive,
   });
 
+  /// 🔄 copyWith
+  /// يستخدم لتعديل جزء من البيانات بدون إنشاء كائن جديد بالكامل
   User copyWith({
     String? id,
     String? name,
@@ -47,20 +60,24 @@ class User {
     );
   }
 
+  /// 📤 تحويل الكائن إلى JSON لحفظه في Firebase
   Map<String, dynamic> toJson() => {
         'id': id,
         'name': name,
         'email': email,
-        'role': role.toString().split('.').last,
+        'role': role.toString().split('.').last, // تحويل enum إلى نص
         'phone': phone,
         'profileImage': profileImage,
         'createdAt': createdAt,
         'isActive': isActive,
       };
 
+  /// 📥 تحويل JSON من Firebase إلى كائن User
   static User fromJson(Map<String, dynamic> json, {String? id}) {
     final rawRole = json['role']?.toString() ?? '';
     final normalizedRole = rawRole.toLowerCase();
+
+    /// 🔄 تحويل النص إلى enum
     final role = UserRole.values.firstWhere(
       (e) {
         final value = e.toString().split('.').last.toLowerCase();
@@ -70,6 +87,7 @@ class User {
       orElse: () => UserRole.client,
     );
 
+    /// ⏱️ معالجة التاريخ (Firebase قد يرجعه بأكثر من شكل)
     final createdAtRaw = json['createdAt'];
     Timestamp createdAt;
     if (createdAtRaw is Timestamp) {
@@ -83,6 +101,7 @@ class User {
       createdAt = Timestamp.now();
     }
 
+    /// 🟢 معالجة الحالة (نشط أو غير نشط)
     final isActiveRaw = json['isActive'];
     final isActive = isActiveRaw is bool
         ? isActiveRaw
@@ -101,16 +120,20 @@ class User {
   }
 }
 
+/// ===============================
+/// 👷 Craftsman (الحرفي)
+/// ===============================
+/// هذا المستخدم هو نفس User لكن مع بيانات إضافية خاصة بالحرفيين
 class Craftsman extends User {
-  final String profession;
-  final int yearsOfExperience;
-  final String city;
-  final String bio;
-  final List<String> skills;
-  final double rating;
-  final int totalOrders;
-  final int totalReviews;
-  final List<String> portfolioImages;
+  final String profession; // نوع المهنة (سباك، كهربائي...)
+  final int yearsOfExperience; // سنوات الخبرة
+  final String city; // المدينة
+  final String bio; // نبذة عن الحرفي
+  final List<String> skills; // المهارات
+  final double rating; // التقييم
+  final int totalOrders; // عدد الطلبات
+  final int totalReviews; // عدد التقييمات
+  final List<String> portfolioImages; // صور الأعمال
 
   Craftsman({
     required super.id,
@@ -132,6 +155,7 @@ class Craftsman extends User {
     this.portfolioImages = const [],
   });
 
+  /// 📤 تحويل الحرفي إلى JSON
   @override
   Map<String, dynamic> toJson() => {
         ...super.toJson(),
@@ -146,6 +170,7 @@ class Craftsman extends User {
         'portfolioImages': portfolioImages,
       };
 
+  /// 📥 تحويل JSON إلى Craftsman
   static Craftsman fromJson(Map<String, dynamic> json, {String? id}) =>
       Craftsman(
         id: id ?? json["id"] as String? ?? '',
@@ -169,6 +194,7 @@ class Craftsman extends User {
         portfolioImages: List<String>.from(json["portfolioImages"] ?? []),
       );
 
+  /// 🔄 تعديل بيانات الحرفي
   @override
   Craftsman copyWith({
     String? id,
@@ -211,6 +237,10 @@ class Craftsman extends User {
   }
 }
 
+/// ===============================
+/// 📦 Order (الطلب)
+/// ===============================
+/// يمثل الطلب الذي يربط العميل بالحرفي
 class Order {
   final String id;
   final String clientId;
@@ -279,6 +309,9 @@ class Order {
       );
 }
 
+/// ===============================
+/// 🧾 Service (الخدمة)
+/// ===============================
 class Service {
   final String id;
   final String name;
@@ -311,6 +344,9 @@ class Service {
       );
 }
 
+/// ===============================
+/// ⭐ Review (التقييم)
+/// ===============================
 class Review {
   final String id;
   final String clientId;
@@ -351,6 +387,9 @@ class Review {
       );
 }
 
+/// ===============================
+/// 💬 ChatMessage (الرسائل)
+/// ===============================
 class ChatMessage {
   final String id;
   final String orderId;

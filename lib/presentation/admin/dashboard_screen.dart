@@ -5,6 +5,10 @@ import 'package:herfatiapp/core/constants.dart';
 import 'package:herfatiapp/data/firebase_service.dart';
 import 'package:herfatiapp/data/models.dart' as app_models;
 
+// Admin Dashboard Screen
+// Arabic: لوحة تحكم المشرف تعرض إحصاءات عامة وروابط لإدارة المستخدمين والطلبات.
+// English: Admin overview with counts and quick access to management screens.
+
 class AdminDashboardScreen extends StatefulWidget {
   const AdminDashboardScreen({super.key});
 
@@ -86,7 +90,7 @@ class _AdminDashboardScreenState extends State<AdminDashboardScreen> {
       setState(() {
         _totalRevenue = orders.fold<double>(0.0, (sum, order) {
           final price = order.price;
-          return sum + (price is num ? price.toDouble() : 0.0);
+          return sum + (price.toDouble());
         });
         _isLoading = false;
       });

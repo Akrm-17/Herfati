@@ -5,6 +5,10 @@ import 'package:herfatiapp/core/constants.dart';
 import 'package:herfatiapp/data/firebase_service.dart';
 import 'package:herfatiapp/data/models.dart' as app_models;
 
+// Admin Reports Screen
+// Arabic: عرض تقارير وإحصاءات متقدمة مثل إيرادات الطلبات المكتملة.
+// English: Shows analytics and report summaries for admin use.
+
 class AdminReportsScreen extends StatefulWidget {
   const AdminReportsScreen({super.key});
 

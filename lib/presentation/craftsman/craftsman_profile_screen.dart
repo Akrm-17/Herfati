@@ -8,6 +8,10 @@ import 'package:herfatiapp/core/widgets.dart';
 import 'package:herfatiapp/data/firebase_service.dart';
 import 'package:herfatiapp/data/models.dart' as app_models;
 
+// Craftsman Profile Edit Screen
+// Arabic: شاشة تعديل بيانات الحرفي بما في ذلك السيرة الذاتية، المعرض، والصورة الشخصية.
+// English: Allows craftsman to update profile, upload images, and edit details.
+
 class CraftsmanProfileEditScreen extends StatefulWidget {
   const CraftsmanProfileEditScreen({super.key});
 

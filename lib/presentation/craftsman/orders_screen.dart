@@ -5,6 +5,10 @@ import 'package:herfatiapp/core/widgets.dart';
 import 'package:herfatiapp/data/firebase_service.dart';
 import 'package:herfatiapp/data/models.dart' as app_models;
 
+// Craftsman Orders Screen
+// Arabic: شاشة قائمة طلبات الحرفي المصنفة حسب الحالة (جديدة، قيد التنفيذ، مكتملة، ملغاة).
+// English: Displays craftsman's orders grouped by status via tabs.
+
 class CraftsmanOrdersScreen extends StatefulWidget {
   const CraftsmanOrdersScreen({super.key});
 

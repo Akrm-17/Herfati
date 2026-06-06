@@ -5,6 +5,10 @@ import 'package:herfatiapp/data/firebase_service.dart';
 import 'package:herfatiapp/data/models.dart' as app_models;
 import 'package:uuid/uuid.dart';
 
+// Craftsman Chat Screen
+// Arabic: واجهة دردشة الحرفي مع العميل المرتبطة بطلب محدد.
+// English: Real-time chat stream for craftsman to communicate with client.
+
 class CraftsmanChatScreen extends StatefulWidget {
   const CraftsmanChatScreen({super.key});
 

@@ -4,6 +4,10 @@ import 'package:herfatiapp/core/widgets.dart';
 import 'package:herfatiapp/data/firebase_service.dart';
 import 'package:herfatiapp/data/models.dart' as app_models;
 
+// Client Home Screen
+// Arabic: شاشة الرئيسية للعميل تعرض البحث والتصنيفات وقائمة الحرفيين.
+// English: Lets clients search, filter by category, and browse craftsmen.
+
 class ClientHomeScreen extends StatefulWidget {
   const ClientHomeScreen({super.key});
 

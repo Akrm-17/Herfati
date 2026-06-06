@@ -5,6 +5,10 @@ import 'package:herfatiapp/core/widgets.dart';
 import 'package:herfatiapp/data/firebase_service.dart';
 import 'package:herfatiapp/data/models.dart' as app_models;
 
+// Client My Orders Screen
+// Arabic: شاشة عرض طلبات العميل الشخصية مرتبة حسب الحالة.
+// English: Lists client's orders and allows navigation to order details or chat.
+
 class MyOrdersScreen extends StatefulWidget {
   const MyOrdersScreen({super.key});
 

@@ -3,6 +3,10 @@ import 'package:herfatiapp/core/constants.dart';
 import 'package:herfatiapp/data/firebase_service.dart';
 import 'package:herfatiapp/data/models.dart' as app_models;
 
+// Craftsman Home Screen
+// Arabic: شاشة الحرفي الرئيسية تعرض إحصاءات الطلبات السريعة وروابط التنقل.
+// English: Shows quick order stats and navigation for the craftsman.
+
 class CraftsmanHomeScreen extends StatefulWidget {
   const CraftsmanHomeScreen({super.key});
 

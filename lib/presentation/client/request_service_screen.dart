@@ -6,6 +6,10 @@ import 'package:herfatiapp/core/widgets.dart';
 import 'package:herfatiapp/data/firebase_service.dart';
 import 'package:herfatiapp/data/models.dart' as app_models;
 
+// Request Service Screen
+// Arabic: شاشة طلب خدمة من حرفي معين (تفاصيل الطلب، السعر، والوصف).
+// English: Create an order/request for a selected craftsman with details and submit.
+
 class RequestServiceScreen extends StatefulWidget {
   final String craftsmanId;
   const RequestServiceScreen({super.key, required this.craftsmanId});

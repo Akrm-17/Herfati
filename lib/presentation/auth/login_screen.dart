@@ -5,6 +5,9 @@ import 'package:herfatiapp/core/widgets.dart';
 import 'package:herfatiapp/data/firebase_service.dart';
 import 'package:herfatiapp/data/models.dart' as app_models;
 
+// شاشة تسجيل الدخول: تحتوي على نموذج بسيط لقبول البريد وكلمة المرور
+// وتنفذ عملية المصادقة عبر `FirebaseService` ثم توجه المستخدم
+// إلى الشاشة المناسبة بناءً على دوره (عميل/حرفي/مشرف).
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});
 
@@ -14,13 +17,19 @@ class LoginScreen extends StatefulWidget {
 
 class _LoginScreenState extends State<LoginScreen> {
   final _formKey = GlobalKey<FormState>();
+  // مفتاح النموذج يستخدم للوصول لحالة الـ Form والتحقق من صحة الحقول
   final TextEditingController _emailController = TextEditingController();
+  // متحكم لحقل البريد الإلكتروني لقراءة النص والتحكم به برمجياً
   final TextEditingController _passwordController = TextEditingController();
+  // متحكم لحقل كلمة المرور
   final FirebaseService _firebaseService = FirebaseService();
+  // كائن خدمة Firebase المسؤولة عن تسجيل الدخول وجميع عمليات الخلفية
   bool _isLoading = false;
+  // علم لتتبع حالة التحميل أثناء إجراء طلب تسجيل الدخول
 
   @override
   void dispose() {
+    // تنظيف متحكمات النص عند إغلاق الواجهة لتفادي استهلاك الذاكرة
     _emailController.dispose();
     _passwordController.dispose();
     super.dispose();
@@ -64,12 +73,18 @@ class _LoginScreenState extends State<LoginScreen> {
 
   @override
   Widget build(BuildContext context) {
+    // تبني شجرة واجهة شاشة تسجيل الدخول:
+    // - Scaffold يحتوي AppBar وجسم الصفحة
+    // - نستخدم Padding لإضافة هوامش داخلية
+    // - Form يغلف الحقول لتمكين عملية التحقق وإعادة الاستخدام
     return Scaffold(
       appBar: AppBar(title: const Text('تسجيل الدخول')),
       body: Padding(
         padding: const EdgeInsets.all(16.0),
         child: Form(
           key: _formKey,
+          // Column لترتيب عناصر واجهة المستخدم عمودياً.
+          // وضع `mainAxisAlignment.center` يجعل المحتوى في منتصف الارتفاع.
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
@@ -106,6 +121,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 isLoading: _isLoading,
               ),
               const SizedBox(height: 16.0),
+              // زر الانتقال إلى شاشة التسجيل للمستخدمين الجدد
               TextButton(
                 onPressed: () {
                   Navigator.of(context).pushNamed(AppRoutes.signup);

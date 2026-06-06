@@ -5,6 +5,10 @@ import 'package:herfatiapp/core/widgets.dart';
 import 'package:herfatiapp/data/firebase_service.dart';
 import 'package:herfatiapp/data/models.dart' as app_models;
 
+// Craftsman Details Screen
+// Arabic: شاشة تفاصيل الحرفي تعرض المعلومات العامة والتقييمات وخيارات التواصل.
+// English: Shows craftsman profile, reviews and actions like starting a chat or requesting service.
+
 class CraftsmanDetailsScreen extends StatefulWidget {
   final String craftsmanId;
   const CraftsmanDetailsScreen({super.key, required this.craftsmanId});

@@ -5,6 +5,10 @@ import 'package:herfatiapp/core/widgets.dart';
 import 'package:herfatiapp/data/firebase_service.dart';
 import 'package:herfatiapp/data/models.dart' as app_models;
 
+// Signup Screen
+// Arabic: شاشة إنشاء حساب جديدة تدعم أدوار المستخدم (عميل، حرفي، مشرف).
+// English: Sign-up form that creates user and, for craftsmen, creates craftsman profile document.
+
 class SignupScreen extends StatefulWidget {
   const SignupScreen({super.key});
 

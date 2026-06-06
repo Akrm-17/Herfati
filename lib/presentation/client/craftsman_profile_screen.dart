@@ -8,6 +8,10 @@ import 'package:uuid/uuid.dart';
 import 'package:intl/intl.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 
+// Client Craftsman Profile Screen
+// Arabic: صفحة العرض التفصيلية لملف الحرفي كما يراها العميل.
+// English: Allows clients to view craftsman's portfolio, reviews and contact options.
+
 class ClientCraftsmanProfileScreen extends StatefulWidget {
   final String? craftsmanId;
   const ClientCraftsmanProfileScreen({super.key, this.craftsmanId});

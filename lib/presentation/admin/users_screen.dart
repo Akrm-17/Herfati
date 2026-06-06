@@ -2,6 +2,10 @@ import 'package:flutter/material.dart';
 import 'package:herfatiapp/data/firebase_service.dart';
 import 'package:herfatiapp/data/models.dart' as app_models;
 
+// Admin Users Screen
+// Arabic: شاشة إدارة المستخدمين تظهر قائمة المستخدمين مع خيارات الحذف والتعديل.
+// English: Allows admin to view and manage user accounts.
+
 class AdminUsersScreen extends StatefulWidget {
   const AdminUsersScreen({super.key});
 
